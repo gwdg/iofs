@@ -5,6 +5,12 @@
 #include <string.h>
 #include <assert.h>
 #include <inttypes.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <errno.h>
 
 #include <iofs-monitor.h>
 
@@ -21,11 +27,13 @@ typedef struct {
   int started;
   pthread_t reporting_thread;
   FILE * logfile;
+  int es_fd; // elasticsearch file descriptor
 
   int timestep;
   monitor_counter_internal_t value[2][COUNTER_LAST]; // two timesteps
 } monitor_internal_t;
 
+static monitor_options_t options;
 static monitor_internal_t monitor;
 
 monitor_counter_t counter[COUNTER_LAST] = {
@@ -35,19 +43,72 @@ monitor_counter_t counter[COUNTER_LAST] = {
   {"read buffer", COUNTER_READ_BUF}
   };
 
+static void submit_to_es(char * json, int json_len){
+  if(! options.elasticsearch_server ) return;
+
+  if (monitor.es_fd == 0){
+    struct addrinfo hints;
+    memset(&hints,0,sizeof(hints));
+    hints.ai_family=AF_UNSPEC;
+    hints.ai_socktype=SOCK_STREAM;
+    hints.ai_protocol=0;
+    hints.ai_flags=AI_ADDRCONFIG;
+    struct addrinfo* res=0;
+    int err=getaddrinfo(options.elasticsearch_server, options.elasticsearch_server_port, &hints, &res);
+    if (err!=0) {
+        fprintf(monitor.logfile, "failed to resolve remote socket address (err=%d)" ,err);
+    }
+
+    int sockfd;
+    sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (sockfd == -1) {
+        fprintf(monitor.logfile, "Socket creation failed: %s\n", strerror(errno));
+    }
+    if (connect(sockfd, res->ai_addr, res->ai_addrlen) != 0) {
+        fprintf(monitor.logfile, "Connection with the server %s:%s failed:  %s\n", options.elasticsearch_server, options.elasticsearch_server_port, strerror(errno));
+        return;
+    }
+    monitor.es_fd = sockfd;
+  }
+
+  // send the data to the server
+  ssize_t pos = 0;
+  while(pos != json_len){
+    ssize_t ret = write(monitor.es_fd, & json[pos], json_len - pos);
+    if ( ret == -1 ){
+      break;
+    }
+    pos += ret;
+  }
+}
+
 static void* reporting_thread(void * user){
+  char json[1024*1024];
   while(monitor.started){
-    sleep(1);
+    sleep(options.interval);
+    char * ptr = json;
     monitor.timestep = (monitor.timestep + 1) % 2;
+
+    ptr += sprintf(ptr, "{");
     for(int i=0; i < COUNTER_LAST; i++){
       monitor_counter_internal_t * p = & monitor.value[monitor.timestep][i];
       double mean_latency = p->latency / p->value;
-      fprintf(monitor.logfile, "%s: %d %"PRIu64" %e\n", counter[i].name, p->count, p->value, mean_latency);
+      if (options.verbosity > 3){
+        fprintf(monitor.logfile, "%s: %d %"PRIu64" %e\n", counter[i].name, p->count, p->value, mean_latency);
+      }
+      if( options.elasticsearch_server ){
+        if(i > 0) ptr += sprintf(ptr, ",");
+        ptr += sprintf(ptr, "\"%s\":%d",  counter[i].name, p->count);
+      }
       p->count = 0;
       p->value = 0;
       p->latency = 0;
     }
-    fflush(monitor.logfile);
+    if (options.verbosity > 5){
+      fflush(monitor.logfile);
+    }
+    ptr += sprintf(ptr, "}");
+    submit_to_es(json, (int)(ptr - json));
   }
   return NULL;
 }
@@ -68,6 +129,8 @@ void monitor_end_activity(monitor_activity_t* activity, monitor_counter_t * coun
 }
 
 void monitor_init(monitor_options_t * o){
+  memcpy(& options, o, sizeof(options));
+  memset(& monitor, 0, sizeof(monitor));
   monitor.logfile = fopen(o->logfile, "w+");
   if(! monitor.logfile) monitor.logfile = fopen(o->logfile, "w");
   if(! monitor.logfile) monitor.logfile = stderr;

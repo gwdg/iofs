@@ -500,8 +500,6 @@ static int cache_release(const char *path, struct fuse_file_info *fi)
 	debug("%s\n", __PRETTY_FUNCTION__);
 	(void) path;
 	close(fi->fh);
-	printf("release\n");
-
 	return 0;
 }
 
@@ -620,7 +618,13 @@ static int cache_flock(const char *path, struct fuse_file_info *fi, int op)
 }
 
 static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
-  monitor_options_t options = {.logfile = "/tmp/iofs.log"};
+  monitor_options_t options = {
+    .logfile = "/tmp/iofs.log",
+    .verbosity = 10,
+    .interval = 1,
+    .elasticsearch_server = "localhost",
+    .elasticsearch_server_port = "8080"
+  };
 
   monitor_init(& options);
   return NULL;
