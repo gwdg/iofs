@@ -16,13 +16,15 @@
  *
  * \section section_compile compiling this example
  *
- * gcc -Wall cache.c `pkg-config fuse3 --cflags --libs` -lulockmgr -o cache
+ * gcc -Wall iofs.c `pkg-config fuse3 --cflags --libs` -lulockmgr -o iofs
  *
- * ./cache -o kernel_cache -o max_write=$((1024*1024*10)) -o big_writes -o allow_other  <TARGET> <SRC>
- *  ./cache -o allow_other,entry_timeout=360,ro,attr_timeout=360,ac_attr_timeout=360,negative_timeout=360,kernel_cache -f /home/julian/Dokumente/DKRZ/wr-git/bull-io/fuse/test $PWD/src
+ * ./iofs -o kernel_cache -o max_write=$((1024*1024*10)) -o big_writes -o allow_other  <TARGET> <SRC>
+ *  ./iofs -o allow_other,entry_timeout=360,ro,attr_timeout=360,ac_attr_timeout=360,negative_timeout=360,kernel_cache -f /dev/test $PWD/src
  */
 
 #define FUSE_USE_VERSION 30
+
+#define debug(...)
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -50,40 +52,48 @@
 #endif
 #include <sys/file.h> /* flock(2) */
 
+#include <iofs-monitor.h>
+
+#define START_TIMER() monitor_activity_t activity;  monitor_start_activity(& activity)
+#define END_TIMER(name, count) monitor_end_activity(& activity, & counter[COUNTER_ ## name], count)
+
 static char * prefix;
 typedef char name_buffer[PATH_MAX];
 
 
 static void prepare_path(const char * path, char * out){
-//	printf("%s\n", __PRETTY_FUNCTION__);
+//	debug("%s\n", __PRETTY_FUNCTION__);
 	snprintf(out, PATH_MAX, "%s/%s", prefix, path);
 }
 
 static int cache_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi)
 {
-//	printf("%s\n", __PRETTY_FUNCTION__);
+  START_TIMER();
+//	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
 //	printf("%s\n", path);
 	prepare_path(path, name_buf);
-
 	res = lstat(name_buf, stbuf);
-	if (res == -1)
-		return -errno;
+  END_TIMER(GETATTR, 1);
+	if (res == -1){
+    return -errno;
+  }
+
 
 	return 0;
 }
 
 static int cache_access(const char *path, int mask)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+  START_TIMER();
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
 
-	printf("access\n");
-
 	res = access(name_buf, mask);
+  END_TIMER(ACCESS, 1);
 	if (res == -1)
 		return -errno;
 
@@ -92,7 +102,7 @@ static int cache_access(const char *path, int mask)
 
 static int cache_readlink(const char *path, char *buf, size_t size)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
@@ -113,7 +123,7 @@ struct cache_dirp {
 
 static int cache_opendir(const char *path, struct fuse_file_info *fi)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
 
@@ -137,7 +147,7 @@ static int cache_opendir(const char *path, struct fuse_file_info *fi)
 
 static inline struct cache_dirp *get_dirp(struct fuse_file_info *fi)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	return (struct cache_dirp *) (uintptr_t) fi->fh;
 }
 
@@ -145,7 +155,7 @@ static int cache_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		       off_t offset, struct fuse_file_info *fi,
 		       enum fuse_readdir_flags flags)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	struct cache_dirp *d = get_dirp(fi);
 
 	(void) path;
@@ -192,7 +202,7 @@ static int cache_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 static int cache_releasedir(const char *path, struct fuse_file_info *fi)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	struct cache_dirp *d = get_dirp(fi);
 	(void) path;
 	closedir(d->dp);
@@ -202,7 +212,7 @@ static int cache_releasedir(const char *path, struct fuse_file_info *fi)
 
 static int cache_mkdir(const char *path, mode_t mode)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
@@ -216,7 +226,7 @@ static int cache_mkdir(const char *path, mode_t mode)
 
 static int cache_unlink(const char *path)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
@@ -230,7 +240,7 @@ static int cache_unlink(const char *path)
 
 static int cache_rmdir(const char *path)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
@@ -244,7 +254,7 @@ static int cache_rmdir(const char *path)
 
 static int cache_symlink(const char *from, const char *to)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf1;
 	prepare_path(from, name_buf1);
@@ -260,7 +270,7 @@ static int cache_symlink(const char *from, const char *to)
 
 static int cache_rename(const char *from, const char *to, unsigned int flags)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf1;
 	prepare_path(from, name_buf1);
@@ -280,7 +290,7 @@ static int cache_rename(const char *from, const char *to, unsigned int flags)
 
 static int cache_link(const char *from, const char *to)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf1;
 	prepare_path(from, name_buf1);
@@ -296,7 +306,7 @@ static int cache_link(const char *from, const char *to)
 
 static int cache_chmod(const char *path, mode_t mode, struct fuse_file_info *fi)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
@@ -310,7 +320,7 @@ static int cache_chmod(const char *path, mode_t mode, struct fuse_file_info *fi)
 
 static int cache_chown(const char *path, uid_t uid, gid_t gid, struct fuse_file_info *fi)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
@@ -324,7 +334,7 @@ static int cache_chown(const char *path, uid_t uid, gid_t gid, struct fuse_file_
 
 static int cache_truncate(const char *path, off_t size, struct fuse_file_info *fi)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
@@ -340,7 +350,7 @@ static int cache_truncate(const char *path, off_t size, struct fuse_file_info *f
 #ifdef HAVE_UTIMENSAT
 static int cache_utimens(const char *path, const struct timespec ts[2])
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
@@ -356,7 +366,7 @@ static int cache_utimens(const char *path, const struct timespec ts[2])
 
 static int cache_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int fd;
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
@@ -371,12 +381,10 @@ static int cache_create(const char *path, mode_t mode, struct fuse_file_info *fi
 
 static int cache_open(const char *path, struct fuse_file_info *fi)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int fd;
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
-
-	printf("OPEN\n");
 
 	fd = open(name_buf, fi->flags);
 	if (fd == -1)
@@ -389,12 +397,13 @@ static int cache_open(const char *path, struct fuse_file_info *fi)
 static int cache_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+  START_TIMER();
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 
 	(void) path;
-	printf("Read\n");
 	res = pread(fi->fh, buf, size, offset);
+  END_TIMER(READ, res);
 	if (res == -1)
 		res = -errno;
 
@@ -404,12 +413,11 @@ static int cache_read(const char *path, char *buf, size_t size, off_t offset,
 static int cache_read_buf(const char *path, struct fuse_bufvec **bufp,
 			size_t size, off_t offset, struct fuse_file_info *fi)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+  START_TIMER();
+	debug("%s\n", __PRETTY_FUNCTION__);
 	struct fuse_bufvec *src;
 
 	(void) path;
-
-	printf("READ_BUF\n");
 
 	src = malloc(sizeof(struct fuse_bufvec));
 	if (src == NULL)
@@ -422,6 +430,7 @@ static int cache_read_buf(const char *path, struct fuse_bufvec **bufp,
 	src->buf[0].pos = offset;
 
 	*bufp = src;
+  END_TIMER(READ_BUF, size);
 
 	return 0;
 }
@@ -429,7 +438,7 @@ static int cache_read_buf(const char *path, struct fuse_bufvec **bufp,
 static int cache_write(const char *path, const char *buf, size_t size,
 		     off_t offset, struct fuse_file_info *fi)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 
 	(void) path;
@@ -443,7 +452,7 @@ static int cache_write(const char *path, const char *buf, size_t size,
 static int cache_write_buf(const char *path, struct fuse_bufvec *buf,
 		     off_t offset, struct fuse_file_info *fi)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	struct fuse_bufvec dst = FUSE_BUFVEC_INIT(fuse_buf_size(buf));
 
 	(void) path;
@@ -457,7 +466,7 @@ static int cache_write_buf(const char *path, struct fuse_bufvec *buf,
 
 static int cache_statfs(const char *path, struct statvfs *stbuf)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 
 	res = statvfs(path, stbuf);
@@ -470,7 +479,7 @@ static int cache_statfs(const char *path, struct statvfs *stbuf)
 
 static int cache_flush(const char *path, struct fuse_file_info *fi)
 {
-//	printf("%s\n", __PRETTY_FUNCTION__);
+//	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 
 	(void) path;
@@ -488,7 +497,7 @@ static int cache_flush(const char *path, struct fuse_file_info *fi)
 
 static int cache_release(const char *path, struct fuse_file_info *fi)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	(void) path;
 	close(fi->fh);
 	printf("release\n");
@@ -499,7 +508,7 @@ static int cache_release(const char *path, struct fuse_file_info *fi)
 static int cache_fsync(const char *path, int isdatasync,
 		     struct fuse_file_info *fi)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	(void) path;
 	printf("fsync\n");
@@ -522,7 +531,7 @@ static int cache_fsync(const char *path, int isdatasync,
 static int cache_fallocate(const char *path, int mode,
 			off_t offset, off_t length, struct fuse_file_info *fi)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	(void) path;
 
 	if (mode)
@@ -537,7 +546,7 @@ static int cache_fallocate(const char *path, int mode,
 static int cache_setxattr(const char *path, const char *name, const char *value,
 			size_t size, int flags)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
 
@@ -550,7 +559,7 @@ static int cache_setxattr(const char *path, const char *name, const char *value,
 static int cache_getxattr(const char *path, const char *name, char *value,
 			size_t size)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
 
@@ -562,7 +571,7 @@ static int cache_getxattr(const char *path, const char *name, char *value,
 
 static int cache_listxattr(const char *path, char *list, size_t size)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
 
@@ -574,7 +583,7 @@ static int cache_listxattr(const char *path, char *list, size_t size)
 
 static int cache_removexattr(const char *path, const char *name)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
 
@@ -589,7 +598,7 @@ static int cache_removexattr(const char *path, const char *name)
 static int cache_lock(const char *path, struct fuse_file_info *fi, int cmd,
 		    struct flock *lock)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	(void) path;
 
 	return ulockmgr_op(fi->fh, cmd, lock, &fi->lock_owner,
@@ -599,7 +608,7 @@ static int cache_lock(const char *path, struct fuse_file_info *fi, int cmd,
 
 static int cache_flock(const char *path, struct fuse_file_info *fi, int op)
 {
-	printf("%s\n", __PRETTY_FUNCTION__);
+	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	(void) path;
 
@@ -608,6 +617,15 @@ static int cache_flock(const char *path, struct fuse_file_info *fi, int op)
 		return -errno;
 
 	return 0;
+}
+
+static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
+  monitor_init();
+  return NULL;
+}
+
+static void cache_destroy (void *private_data){
+  monitor_finalize();
 }
 
 static struct fuse_operations cache_oper = {
@@ -633,11 +651,8 @@ static struct fuse_operations cache_oper = {
 	.open		= cache_open,
 	.read		= cache_read,
 	.write		= cache_write,
-#ifndef SIOX
-#warning NON SIOX MODE
 	.read_buf	= cache_read_buf,
 	.write_buf	= cache_write_buf,
-#endif
 	.statfs		= cache_statfs,
 	.flush		= cache_flush,
 	.release	= cache_release,
@@ -655,6 +670,8 @@ static struct fuse_operations cache_oper = {
 	.lock		= cache_lock,
 #endif
 	.flock		= cache_flock,
+  .init     = cache_init,
+  .destroy  = cache_destroy
 };
 
 int main(int argc, char *argv[])
@@ -668,5 +685,9 @@ int main(int argc, char *argv[])
 	umask(0);
 	prefix = argv[argc -1];
 
-	return fuse_main(argc -1, argv, &cache_oper, NULL);
+  int create_table = strcmp(argv[1], "--create-table") == 0;
+  //register_iofs_counters(create_table);
+
+	int ret = fuse_main(argc -1, argv, &cache_oper, NULL);
+  return 0;
 }
