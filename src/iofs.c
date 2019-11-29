@@ -620,7 +620,9 @@ static int cache_flock(const char *path, struct fuse_file_info *fi, int op)
 }
 
 static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
-  monitor_init();
+  monitor_options_t options = {.logfile = "/tmp/iofs.log"};
+
+  monitor_init(& options);
   return NULL;
 }
 

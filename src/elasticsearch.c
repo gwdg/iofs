@@ -10,6 +10,8 @@
 
 
 typedef struct{
+  // mutex could be here
+  // buffer could be here
   int count;
   uint64_t value;
   double latency;
@@ -19,7 +21,9 @@ typedef struct {
   int started;
   pthread_t reporting_thread;
   FILE * logfile;
-  monitor_counter_internal_t value[COUNTER_LAST];
+
+  int timestep;
+  monitor_counter_internal_t value[2][COUNTER_LAST]; // two timesteps
 } monitor_internal_t;
 
 static monitor_internal_t monitor;
@@ -34,10 +38,14 @@ monitor_counter_t counter[COUNTER_LAST] = {
 static void* reporting_thread(void * user){
   while(monitor.started){
     sleep(1);
+    monitor.timestep = (monitor.timestep + 1) % 2;
     for(int i=0; i < COUNTER_LAST; i++){
-      monitor_counter_internal_t * p = & monitor.value[i];
+      monitor_counter_internal_t * p = & monitor.value[monitor.timestep][i];
       double mean_latency = p->latency / p->value;
       fprintf(monitor.logfile, "%s: %d %"PRIu64" %e\n", counter[i].name, p->count, p->value, mean_latency);
+      p->count = 0;
+      p->value = 0;
+      p->latency = 0;
     }
     fflush(monitor.logfile);
   }
@@ -52,15 +60,16 @@ void monitor_end_activity(monitor_activity_t* activity, monitor_counter_t * coun
   clock_t t_end;
   t_end = clock();
   double t = ((double) (t_end - activity->t_start)) / CLOCKS_PER_SEC;
+  int ts = monitor.timestep;
   int type = counter->type;
-  monitor.value[type].value += count;
-  monitor.value[type].latency += t;
-  monitor.value[type].count++;
+  monitor.value[ts][type].value += count;
+  monitor.value[ts][type].latency += t;
+  monitor.value[ts][type].count++;
 }
 
-void monitor_init(){
-  monitor.logfile = fopen("iofs.log", "w+");
-  if(! monitor.logfile) monitor.logfile = fopen("iofs.log", "w");
+void monitor_init(monitor_options_t * o){
+  monitor.logfile = fopen(o->logfile, "w+");
+  if(! monitor.logfile) monitor.logfile = fopen(o->logfile, "w");
   if(! monitor.logfile) monitor.logfile = stderr;
   memset(monitor.value, 0, sizeof(monitor.value));
 

@@ -12,6 +12,10 @@ enum counter_type_t{
   COUNTER_LAST
 };
 
+typedef struct {
+  char * logfile;
+} monitor_options_t;
+
 struct monitor_counter_t{
   char const * name;
   enum counter_type_t type;
@@ -26,7 +30,7 @@ struct monitor_activity_t{
 
 typedef struct monitor_activity_t monitor_activity_t;
 
-void monitor_init();
+void monitor_init(monitor_options_t * options);
 void monitor_finalize();
 
 /**
