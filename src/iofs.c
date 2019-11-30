@@ -622,6 +622,7 @@ static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
     .es_server = "localhost",
     .es_server_port = "8080",
     .es_uri = "iofs/",
+    .detailed_logging = 0,
   };
 
   monitor_init(& options);

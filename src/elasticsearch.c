@@ -37,10 +37,43 @@ static monitor_options_t options;
 static monitor_internal_t monitor;
 
 monitor_counter_t counter[COUNTER_LAST] = {
-  {"getattr", COUNTER_GETATTR},
-  {"access", COUNTER_ACCESS},
-  {"read", COUNTER_READ},
-  {"read buffer", COUNTER_READ_BUF}
+  {"MD get", COUNTER_MD_GET, COUNTER_NONE},
+  {"MD mod", COUNTER_MD_MOD, COUNTER_NONE},
+  {"MD other", COUNTER_MD_OTHER, COUNTER_NONE},
+  {"read", COUNTER_READ, COUNTER_NONE},
+  {"write", COUNTER_WRITE, COUNTER_NONE},
+
+  {"getattr", COUNTER_GETATTR, COUNTER_MD_GET},
+  {"access", COUNTER_ACCESS, COUNTER_MD_GET},
+  {"readlink", COUNTER_READLINK, COUNTER_MD_GET},
+  {"opendir", COUNTER_OPENDIR, COUNTER_MD_GET},
+  {"readdir", COUNTER_READDIR, COUNTER_MD_GET},
+  {"releasedir", COUNTER_RELEASEDIR, COUNTER_NONE},
+  {"mkdir", COUNTER_MKDIR, COUNTER_MD_MOD},
+  {"symlink", COUNTER_SYMLINK, COUNTER_MD_MOD},
+  {"unlink", COUNTER_UNLINK, COUNTER_MD_MOD},
+  {"rmdir", COUNTER_RMDIR, COUNTER_MD_MOD},
+  {"rename", COUNTER_RENAME, COUNTER_MD_MOD},
+  {"link", COUNTER_LINK, COUNTER_MD_MOD},
+  {"chmod", COUNTER_CHMOD, COUNTER_MD_MOD},
+  {"chown", COUNTER_CHOWN, COUNTER_MD_MOD},
+  {"truncate", COUNTER_TRUNCATE, COUNTER_MD_MOD},
+  {"utimens", COUNTER_UTIMENS, COUNTER_MD_MOD},
+  {"create", COUNTER_CREATE, COUNTER_MD_MOD},
+  {"open", COUNTER_OPEN, COUNTER_MD_GET},
+  {"read_buf", COUNTER_READ_BUF, COUNTER_NONE},
+  {"write_buf", COUNTER_WRITE_BUF, COUNTER_NONE},
+  {"statfs", COUNTER_STATFS, COUNTER_MD_OTHER},
+  {"flush", COUNTER_FLUSH, COUNTER_NONE},
+  {"release", COUNTER_RELEASE, COUNTER_NONE},
+  {"fsync", COUNTER_FSYNC, COUNTER_NONE},
+  {"fallocate", COUNTER_FALLOCATE, COUNTER_NONE},
+  {"setxattr", COUNTER_SETXATTR, COUNTER_MD_MOD},
+  {"getxattr", COUNTER_GETXATTR, COUNTER_MD_GET},
+  {"listxattr", COUNTER_LISTXATTR, COUNTER_MD_GET},
+  {"removexattr", COUNTER_REMOVEXATTR, COUNTER_MD_MOD},
+  {"lock", COUNTER_LOCK, COUNTER_NONE},
+  {"flock", COUNTER_FLOCK, COUNTER_NONE},
   };
 
 static void es_send(char* data, int len){
@@ -94,6 +127,12 @@ static void submit_to_es(char * json, int json_len){
 
 static void* reporting_thread(void * user){
   char json[1024*1024];
+  int lastCounter;
+  if (options.detailed_logging){
+    lastCounter = COUNTER_LAST;
+  }else{
+    lastCounter = COUNTER_WRITE + 1;
+  }
   while(monitor.started){
     sleep(options.interval);
     char * ptr = json;
@@ -101,7 +140,7 @@ static void* reporting_thread(void * user){
 
     ptr += sprintf(ptr, "{");
 
-    for(int i=0; i < COUNTER_LAST; i++){
+    for(int i=0; i < lastCounter; i++){
       monitor_counter_internal_t * p = & monitor.value[monitor.timestep][i];
       double mean_latency = p->latency / p->value;
       if (options.verbosity > 3){
@@ -134,9 +173,17 @@ void monitor_end_activity(monitor_activity_t* activity, monitor_counter_t * coun
   double t = ((double) (t_end - activity->t_start)) / CLOCKS_PER_SEC;
   int ts = monitor.timestep;
   int type = counter->type;
+  // On some machine may be not thread safe and lead to some inaccuracy, we accept this for performance
   monitor.value[ts][type].value += count;
   monitor.value[ts][type].latency += t;
   monitor.value[ts][type].count++;
+
+  if(counter->parent_type != COUNTER_NONE){
+    type = counter->parent_type;
+    monitor.value[ts][type].value += count;
+    monitor.value[ts][type].latency += t;
+    monitor.value[ts][type].count++;
+  }
 }
 
 void monitor_init(monitor_options_t * o){
