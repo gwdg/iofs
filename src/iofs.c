@@ -22,7 +22,8 @@
  *  ./iofs -o allow_other,entry_timeout=360,ro,attr_timeout=360,ac_attr_timeout=360,negative_timeout=360,kernel_cache -f /dev/test $PWD/src
  */
 
-#define FUSE_USE_VERSION 30
+#define HAVE_UTIMENSAT
+#define FUSE_USE_VERSION 31
 
 #define debug(...)
 
@@ -72,15 +73,12 @@ static int cache_getattr(const char *path, struct stat *stbuf, struct fuse_file_
 //	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
-//	printf("%s\n", path);
 	prepare_path(path, name_buf);
 	res = lstat(name_buf, stbuf);
   END_TIMER(GETATTR, 1);
 	if (res == -1){
     return -errno;
   }
-
-
 	return 0;
 }
 
@@ -348,8 +346,7 @@ static int cache_truncate(const char *path, off_t size, struct fuse_file_info *f
 
 
 #ifdef HAVE_UTIMENSAT
-static int cache_utimens(const char *path, const struct timespec ts[2])
-{
+static int cache_utimens(const char *path, const struct timespec ts[2], struct fuse_file_info *fi){
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
@@ -622,8 +619,9 @@ static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
     .logfile = "/tmp/iofs.log",
     .verbosity = 10,
     .interval = 1,
-    .elasticsearch_server = "localhost",
-    .elasticsearch_server_port = "8080"
+    .es_server = "localhost",
+    .es_server_port = "8080",
+    .es_uri = "iofs/",
   };
 
   monitor_init(& options);

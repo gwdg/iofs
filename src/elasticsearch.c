@@ -27,7 +27,7 @@ typedef struct {
   int started;
   pthread_t reporting_thread;
   FILE * logfile;
-  int es_fd; // elasticsearch file descriptor
+  int es_fd; // es file descriptor
 
   int timestep;
   monitor_counter_internal_t value[2][COUNTER_LAST]; // two timesteps
@@ -43,8 +43,22 @@ monitor_counter_t counter[COUNTER_LAST] = {
   {"read buffer", COUNTER_READ_BUF}
   };
 
+static void es_send(char* data, int len){
+  // send the data to the server
+  ssize_t pos = 0;
+  while(pos != len){
+    ssize_t ret = write(monitor.es_fd, & data[pos], len - pos);
+    if ( ret == -1 ){
+      monitor.es_fd = 0;
+      fprintf(monitor.logfile, "error during sending to es: %s", strerror(errno));
+      break;
+    }
+    pos += ret;
+  }
+}
+
 static void submit_to_es(char * json, int json_len){
-  if(! options.elasticsearch_server ) return;
+  if(! options.es_server ) return;
 
   if (monitor.es_fd == 0){
     struct addrinfo hints;
@@ -54,9 +68,9 @@ static void submit_to_es(char * json, int json_len){
     hints.ai_protocol=0;
     hints.ai_flags=AI_ADDRCONFIG;
     struct addrinfo* res=0;
-    int err=getaddrinfo(options.elasticsearch_server, options.elasticsearch_server_port, &hints, &res);
+    int err=getaddrinfo(options.es_server, options.es_server_port, &hints, &res);
     if (err!=0) {
-        fprintf(monitor.logfile, "failed to resolve remote socket address (err=%d)" ,err);
+      fprintf(monitor.logfile, "failed to resolve remote socket address (err=%d)" ,err);
     }
 
     int sockfd;
@@ -65,21 +79,17 @@ static void submit_to_es(char * json, int json_len){
         fprintf(monitor.logfile, "Socket creation failed: %s\n", strerror(errno));
     }
     if (connect(sockfd, res->ai_addr, res->ai_addrlen) != 0) {
-        fprintf(monitor.logfile, "Connection with the server %s:%s failed:  %s\n", options.elasticsearch_server, options.elasticsearch_server_port, strerror(errno));
+        fprintf(monitor.logfile, "Connection with the server %s:%s failed:  %s\n", options.es_server, options.es_server_port, strerror(errno));
         return;
     }
     monitor.es_fd = sockfd;
   }
 
-  // send the data to the server
-  ssize_t pos = 0;
-  while(pos != json_len){
-    ssize_t ret = write(monitor.es_fd, & json[pos], json_len - pos);
-    if ( ret == -1 ){
-      break;
-    }
-    pos += ret;
-  }
+  // send the header to the server
+  char buff[1024];
+  int len = sprintf(buff, "POST /%s HTTP/1.1\nHost: \"%s\"\nContent-Length: %d\nContent-Type: application/x-www-form-urlencoded\n\n", options.es_uri, options.es_server, json_len);
+  es_send(buff, len);
+  es_send(json, json_len);
 }
 
 static void* reporting_thread(void * user){
@@ -90,13 +100,14 @@ static void* reporting_thread(void * user){
     monitor.timestep = (monitor.timestep + 1) % 2;
 
     ptr += sprintf(ptr, "{");
+
     for(int i=0; i < COUNTER_LAST; i++){
       monitor_counter_internal_t * p = & monitor.value[monitor.timestep][i];
       double mean_latency = p->latency / p->value;
       if (options.verbosity > 3){
         fprintf(monitor.logfile, "%s: %d %"PRIu64" %e\n", counter[i].name, p->count, p->value, mean_latency);
       }
-      if( options.elasticsearch_server ){
+      if( options.es_server ){
         if(i > 0) ptr += sprintf(ptr, ",");
         ptr += sprintf(ptr, "\"%s\":%d",  counter[i].name, p->count);
       }
@@ -107,7 +118,7 @@ static void* reporting_thread(void * user){
     if (options.verbosity > 5){
       fflush(monitor.logfile);
     }
-    ptr += sprintf(ptr, "}");
+    ptr += sprintf(ptr, "}\n");
     submit_to_es(json, (int)(ptr - json));
   }
   return NULL;

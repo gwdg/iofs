@@ -15,8 +15,9 @@ enum counter_type_t{
 typedef struct {
   char * logfile;
   int verbosity;
-  char * elasticsearch_server;
-  char * elasticsearch_server_port;
+  char * es_server;
+  char * es_server_port;
+  char * es_uri;
   int interval;
 } monitor_options_t;
 
