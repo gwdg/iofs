@@ -19,7 +19,7 @@
  * gcc -Wall iofs.c `pkg-config fuse3 --cflags --libs` -lulockmgr -o iofs
  *
  * ./iofs -o kernel_cache -o max_write=$((1024*1024*10)) -o big_writes -o allow_other  <TARGET> <SRC>
- *  ./iofs -o allow_other,entry_timeout=360,ro,attr_timeout=360,ac_attr_timeout=360,negative_timeout=360,kernel_cache -f /dev/test $PWD/src
+ *  ./iofs -o allow_other,entry_timeout=360,ro,attr_timeout=360,ac_attr_timeout=360,negative_timeout=360,kernel_cache -o max_idle_threads=16 -f /dev/test $PWD/src
  */
 
 // Use if you want to use the kernel cache...
@@ -669,6 +669,31 @@ static int cache_flock(const char *path, struct fuse_file_info *fi, int op)
 }
 
 static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
+
+  // see documentation of options in fuse.h
+  //cfg->direct_io = 1;
+  //cfg->kernel_cache = 1;
+  cfg->auto_cache = 0;
+
+  printf("IOFS init\n");
+  printf("intr: %d\n", cfg->intr);
+  printf("remember: %d\n", cfg->remember);
+  printf("intr: %d\n", cfg->intr);
+  printf("hard_remove: %d\n", cfg->hard_remove);
+  printf("use_ino: %d\n", cfg->use_ino);
+  printf("readdir_ino: %d\n", cfg->readdir_ino);
+  printf("direct_io: %d\n", cfg->direct_io);
+  printf("kernel_cache: %d\n", cfg->kernel_cache);
+  printf("auto_cache: %d\n", cfg->auto_cache);
+  printf("ac_attr_timeout_set: %d\n", cfg->ac_attr_timeout_set);
+  printf("nullpath_ok: %d\n", cfg->nullpath_ok);
+
+  printf("ac_attr_timeout: %f\n", cfg->ac_attr_timeout);
+  printf("entry_timeout: %f\n", cfg->entry_timeout);
+  printf("negative_timeout: %f\n", cfg->negative_timeout);
+  printf("attr_timeout: %f\n", cfg->attr_timeout);
+
+
   monitor_options_t options = {
     .logfile = "/tmp/iofs.log",
     .verbosity = 10,
