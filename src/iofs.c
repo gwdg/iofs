@@ -101,12 +101,14 @@ static int cache_access(const char *path, int mask)
 
 static int cache_readlink(const char *path, char *buf, size_t size)
 {
+  START_TIMER();
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
 
 	res = readlink(name_buf, buf, size - 1);
+  END_TIMER(READLINK, 1);
 	if (res == -1)
 		return -errno;
 
@@ -123,6 +125,7 @@ struct cache_dirp {
 static int cache_opendir(const char *path, struct fuse_file_info *fi)
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
+  START_TIMER();
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
 
@@ -132,6 +135,7 @@ static int cache_opendir(const char *path, struct fuse_file_info *fi)
 		return -ENOMEM;
 
 	d->dp = opendir(name_buf);
+  END_TIMER(OPENDIR, 1);
 	if (d->dp == NULL) {
 		res = -errno;
 		free(d);
@@ -155,6 +159,7 @@ static int cache_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		       enum fuse_readdir_flags flags)
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
+  START_TIMER();
 	struct cache_dirp *d = get_dirp(fi);
 
 	(void) path;
@@ -196,27 +201,33 @@ static int cache_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		d->offset = nextoff;
 	}
 
+  END_TIMER(READDIR, 1);
+
 	return 0;
 }
 
 static int cache_releasedir(const char *path, struct fuse_file_info *fi)
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
+  START_TIMER();
 	struct cache_dirp *d = get_dirp(fi);
 	(void) path;
 	closedir(d->dp);
 	free(d);
+  END_TIMER(RELEASEDIR, 1);
 	return 0;
 }
 
 static int cache_mkdir(const char *path, mode_t mode)
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
+  START_TIMER();
 	int res;
 	name_buffer name_buf;
 	prepare_path(path, name_buf);
 
 	res = mkdir(name_buf, mode);
+  END_TIMER(MKDIR, 1);
 	if (res == -1)
 		return -errno;
 
@@ -228,9 +239,11 @@ static int cache_unlink(const char *path)
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
+  START_TIMER();
 	prepare_path(path, name_buf);
 
 	res = unlink(name_buf);
+  END_TIMER(UNLINK, 1);
 	if (res == -1)
 		return -errno;
 
@@ -242,9 +255,11 @@ static int cache_rmdir(const char *path)
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
+  START_TIMER();
 	prepare_path(path, name_buf);
 
 	res = rmdir(name_buf);
+  END_TIMER(RMDIR, 1);
 	if (res == -1)
 		return -errno;
 
@@ -255,12 +270,14 @@ static int cache_symlink(const char *from, const char *to)
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
+  START_TIMER();
 	name_buffer name_buf1;
 	prepare_path(from, name_buf1);
 	name_buffer name_buf2;
 	prepare_path(to, name_buf2);
 
 	res = symlink(name_buf1, name_buf2);
+  END_TIMER(SYMLINK, 1);
 	if (res == -1)
 		return -errno;
 
@@ -271,6 +288,7 @@ static int cache_rename(const char *from, const char *to, unsigned int flags)
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
+  START_TIMER();
 	name_buffer name_buf1;
 	prepare_path(from, name_buf1);
 	name_buffer name_buf2;
@@ -281,6 +299,7 @@ static int cache_rename(const char *from, const char *to, unsigned int flags)
 		return -EINVAL;
 
 	res = rename(name_buf1, name_buf2);
+  END_TIMER(RENAME, 1);
 	if (res == -1)
 		return -errno;
 
@@ -291,12 +310,14 @@ static int cache_link(const char *from, const char *to)
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
+  START_TIMER();
 	name_buffer name_buf1;
 	prepare_path(from, name_buf1);
 	name_buffer name_buf2;
 	prepare_path(to, name_buf2);
 
 	res = link(name_buf1, name_buf2);
+  END_TIMER(LINK, 1);
 	if (res == -1)
 		return -errno;
 
@@ -308,9 +329,11 @@ static int cache_chmod(const char *path, mode_t mode, struct fuse_file_info *fi)
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
+  START_TIMER();
 	prepare_path(path, name_buf);
 
 	res = chmod(name_buf, mode);
+  END_TIMER(CHMOD, 1);
 	if (res == -1)
 		return -errno;
 
@@ -322,9 +345,11 @@ static int cache_chown(const char *path, uid_t uid, gid_t gid, struct fuse_file_
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
+  START_TIMER();
 	prepare_path(path, name_buf);
 
 	res = lchown(name_buf, uid, gid);
+  END_TIMER(CHOWN, 1);
 	if (res == -1)
 		return -errno;
 
@@ -336,9 +361,11 @@ static int cache_truncate(const char *path, off_t size, struct fuse_file_info *f
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
+  START_TIMER();
 	prepare_path(path, name_buf);
 
 	res = truncate(name_buf, size);
+  END_TIMER(TRUNCATE, 1);
 	if (res == -1)
 		return -errno;
 
@@ -351,10 +378,12 @@ static int cache_utimens(const char *path, const struct timespec ts[2], struct f
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	name_buffer name_buf;
+  START_TIMER();
 	prepare_path(path, name_buf);
 
 	/* don't use utime/utimes since they follow symlinks */
 	res = utimensat(0, name_buf, ts, AT_SYMLINK_NOFOLLOW);
+  END_TIMER(UTIMENS, 1);
 	if (res == -1)
 		return -errno;
 
@@ -367,9 +396,11 @@ static int cache_create(const char *path, mode_t mode, struct fuse_file_info *fi
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int fd;
 	name_buffer name_buf;
+  START_TIMER();
 	prepare_path(path, name_buf);
 
 	fd = open(name_buf, fi->flags, mode);
+  END_TIMER(CREATE, 1);
 	if (fd == -1)
 		return -errno;
 
@@ -382,9 +413,11 @@ static int cache_open(const char *path, struct fuse_file_info *fi)
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int fd;
 	name_buffer name_buf;
+  START_TIMER();
 	prepare_path(path, name_buf);
 
 	fd = open(name_buf, fi->flags);
+  END_TIMER(OPEN, 1);
 	if (fd == -1)
 		return -errno;
 
@@ -395,8 +428,8 @@ static int cache_open(const char *path, struct fuse_file_info *fi)
 static int cache_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
-  START_TIMER();
 	debug("%s\n", __PRETTY_FUNCTION__);
+  START_TIMER();
 	int res;
 
 	(void) path;
@@ -410,8 +443,8 @@ static int cache_read(const char *path, char *buf, size_t size, off_t offset,
 
 static int cache_read_buf(const char *path, struct fuse_bufvec **bufp, size_t size, off_t offset, struct fuse_file_info *fi)
 {
-  START_TIMER();
 	debug("%s\n", __PRETTY_FUNCTION__);
+  START_TIMER();
 	struct fuse_bufvec *src;
 
 	(void) path;
@@ -447,8 +480,7 @@ static int cache_write(const char *path, const char *buf, size_t size, off_t off
 	return res;
 }
 
-static int cache_write_buf(const char *path, struct fuse_bufvec *buf,
-		     off_t offset, struct fuse_file_info *fi)
+static int cache_write_buf(const char *path, struct fuse_bufvec *buf, off_t offset, struct fuse_file_info *fi)
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
   START_TIMER();
@@ -471,17 +503,17 @@ static int cache_statfs(const char *path, struct statvfs *stbuf)
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 
+  START_TIMER();
 	res = statvfs(path, stbuf);
+  END_TIMER(STATFS, 1);
 	if (res == -1)
 		return -errno;
 
 	return 0;
 }
-// ./cache -o allow_other  -o entry_timeout=360 -o ro -o attr_timeout=360 -o negative_timeout=360  -o kernel_cache -f /home/julian/Dokumente/DKRZ/wr-git/bull-io/fuse/test $PWD/src
 
 static int cache_flush(const char *path, struct fuse_file_info *fi)
 {
-//	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 
 	(void) path;
@@ -490,7 +522,9 @@ static int cache_flush(const char *path, struct fuse_file_info *fi)
 	   called multiple times for an open file, this must not really
 	   close the file.  This is important if used on a network
 	   filesystem like NFS which flush the data/metadata on close() */
+  START_TIMER();
 	res = close(dup(fi->fh));
+  END_TIMER(FLUSH, 1);
 	if (res == -1)
 		return -errno;
 
@@ -501,7 +535,9 @@ static int cache_release(const char *path, struct fuse_file_info *fi)
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
 	(void) path;
+  START_TIMER();
 	close(fi->fh);
+  END_TIMER(RELEASE, 1);
 	return 0;
 }
 
@@ -511,8 +547,7 @@ static int cache_fsync(const char *path, int isdatasync,
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
 	(void) path;
-	printf("fsync\n");
-
+  START_TIMER();
 #ifndef HAVE_FDATASYNC
 	(void) isdatasync;
 #else
@@ -521,6 +556,7 @@ static int cache_fsync(const char *path, int isdatasync,
 	else
 #endif
 		res = fsync(fi->fh);
+  END_TIMER(FSYNC, 1);
 	if (res == -1)
 		return -errno;
 
@@ -537,7 +573,10 @@ static int cache_fallocate(const char *path, int mode,
 	if (mode)
 		return -EOPNOTSUPP;
 
-	return -posix_fallocate(fi->fh, offset, length);
+  START_TIMER();
+	int ret = -posix_fallocate(fi->fh, offset, length);
+  END_TIMER(FALLOCATE, 1);
+  return ret;
 }
 #endif
 
@@ -548,9 +587,11 @@ static int cache_setxattr(const char *path, const char *name, const char *value,
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
 	name_buffer name_buf;
+  START_TIMER();
 	prepare_path(path, name_buf);
 
 	int res = lsetxattr(name_buf, name, value, size, flags);
+  END_TIMER(SETXATTR, 1);
 	if (res == -1)
 		return -errno;
 	return 0;
@@ -561,9 +602,11 @@ static int cache_getxattr(const char *path, const char *name, char *value,
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
 	name_buffer name_buf;
+  START_TIMER();
 	prepare_path(path, name_buf);
 
 	int res = lgetxattr(name_buf, name, value, size);
+  END_TIMER(GETXATTR, 1);
 	if (res == -1)
 		return -errno;
 	return res;
@@ -573,9 +616,11 @@ static int cache_listxattr(const char *path, char *list, size_t size)
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
 	name_buffer name_buf;
+  START_TIMER();
 	prepare_path(path, name_buf);
 
 	int res = llistxattr(name_buf, list, size);
+  END_TIMER(LISTXATTR, 1);
 	if (res == -1)
 		return -errno;
 	return res;
@@ -585,9 +630,11 @@ static int cache_removexattr(const char *path, const char *name)
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
 	name_buffer name_buf;
+  START_TIMER();
 	prepare_path(path, name_buf);
 
 	int res = lremovexattr(name_buf, name);
+  END_TIMER(REMOVEXATTR, 1);
 	if (res == -1)
 		return -errno;
 	return 0;
@@ -599,10 +646,12 @@ static int cache_lock(const char *path, struct fuse_file_info *fi, int cmd,
 		    struct flock *lock)
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
-	(void) path;
 
-	return ulockmgr_op(fi->fh, cmd, lock, &fi->lock_owner,
+  START_TIMER();
+	int ret = ulockmgr_op(fi->fh, cmd, lock, &fi->lock_owner,
 			   sizeof(fi->lock_owner));
+  END_TIMER(LOCK, 1);
+  return ret;
 }
 #endif
 
@@ -610,9 +659,9 @@ static int cache_flock(const char *path, struct fuse_file_info *fi, int op)
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
 	int res;
-	(void) path;
-
+  START_TIMER();
 	res = flock(fi->fh, op);
+  END_TIMER(FLOCK, 1);
 	if (res == -1)
 		return -errno;
 
@@ -692,7 +741,7 @@ int main(int argc, char *argv[])
 		printf("Synopsis: %s [options] <TARGET> <SOURCE PATH>\n", argv[0]);
 		exit(1);
 	}
-	printf("Cache version 0.5 %s on %s\n", argv[0], argv[argc -1]);
+	printf("IOFS-trace version 0.8 %s on %s\n", argv[0], argv[argc -1]);
 
 	umask(0);
 	prefix = argv[argc -1];
