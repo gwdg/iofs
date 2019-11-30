@@ -22,16 +22,17 @@
  *  ./iofs -o allow_other,entry_timeout=360,ro,attr_timeout=360,ac_attr_timeout=360,negative_timeout=360,kernel_cache -f /dev/test $PWD/src
  */
 
+// Use if you want to use the kernel cache...
+//#define USE_KERNEL_CACHE
+
+#define FUSE_USE_VERSION 36
 #define HAVE_UTIMENSAT
-#define FUSE_USE_VERSION 31
 
 #define debug(...)
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-
-#define _GNU_SOURCE
 
 #include <fuse.h>
 
@@ -407,8 +408,7 @@ static int cache_read(const char *path, char *buf, size_t size, off_t offset,
 	return res;
 }
 
-static int cache_read_buf(const char *path, struct fuse_bufvec **bufp,
-			size_t size, off_t offset, struct fuse_file_info *fi)
+static int cache_read_buf(const char *path, struct fuse_bufvec **bufp, size_t size, off_t offset, struct fuse_file_info *fi)
 {
   START_TIMER();
 	debug("%s\n", __PRETTY_FUNCTION__);
@@ -432,14 +432,15 @@ static int cache_read_buf(const char *path, struct fuse_bufvec **bufp,
 	return 0;
 }
 
-static int cache_write(const char *path, const char *buf, size_t size,
-		     off_t offset, struct fuse_file_info *fi)
+static int cache_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
-	debug("%s\n", __PRETTY_FUNCTION__);
+  debug("%s\n", __PRETTY_FUNCTION__);
+  START_TIMER();
 	int res;
 
 	(void) path;
 	res = pwrite(fi->fh, buf, size, offset);
+  END_TIMER(WRITE, res);
 	if (res == -1)
 		res = -errno;
 
@@ -450,7 +451,9 @@ static int cache_write_buf(const char *path, struct fuse_bufvec *buf,
 		     off_t offset, struct fuse_file_info *fi)
 {
 	debug("%s\n", __PRETTY_FUNCTION__);
-	struct fuse_bufvec dst = FUSE_BUFVEC_INIT(fuse_buf_size(buf));
+  START_TIMER();
+  size_t size = fuse_buf_size(buf);
+	struct fuse_bufvec dst = FUSE_BUFVEC_INIT(size);
 
 	(void) path;
 
@@ -458,7 +461,9 @@ static int cache_write_buf(const char *path, struct fuse_bufvec *buf,
 	dst.buf[0].fd = fi->fh;
 	dst.buf[0].pos = offset;
 
-	return fuse_buf_copy(&dst, buf, FUSE_BUF_SPLICE_NONBLOCK);
+	int ret = fuse_buf_copy(&dst, buf, FUSE_BUF_SPLICE_NONBLOCK);
+  END_TIMER(WRITE_BUF, size);
+  return ret;
 }
 
 static int cache_statfs(const char *path, struct statvfs *stbuf)
@@ -656,8 +661,10 @@ static struct fuse_operations cache_oper = {
 	.open		= cache_open,
 	.read		= cache_read,
 	.write		= cache_write,
+#ifdef USE_KERNEL_CACHE
 	.read_buf	= cache_read_buf,
 	.write_buf	= cache_write_buf,
+#endif
 	.statfs		= cache_statfs,
 	.flush		= cache_flush,
 	.release	= cache_release,

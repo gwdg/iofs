@@ -11,9 +11,19 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <math.h>
 
 #include <iofs-monitor.h>
 
+enum hist_type_t{
+  HIST_READ,
+  HIST_WRITE,
+  HIST_LAST
+};
+
+static char * hist_names[HIST_LAST] = {"read", "write"};
+#define HIST_BUCKETS 7
+static int hist_sizes[HIST_BUCKETS - 1] = {4096, 4096*2, 4096*4, 65536, 65536*2, 65536*4};
 
 typedef struct{
   // mutex could be here
@@ -21,7 +31,14 @@ typedef struct{
   int count;
   uint64_t value;
   double latency;
+  float latency_max;
+  float latency_min;
 } monitor_counter_internal_t;
+
+typedef struct{
+  // intervals: 4, 8, 16, 32, 64, 128, 256, 1024+
+  monitor_counter_internal_t interval[HIST_BUCKETS];
+} monitor_histogram_t;
 
 typedef struct {
   int started;
@@ -30,7 +47,8 @@ typedef struct {
   int es_fd; // es file descriptor
 
   int timestep;
-  monitor_counter_internal_t value[2][COUNTER_LAST]; // two timesteps
+  monitor_counter_internal_t  value[2][COUNTER_LAST]; // two timesteps
+  monitor_histogram_t         hist[2][HIST_LAST];
 } monitor_internal_t;
 
 static monitor_options_t options;
@@ -125,6 +143,14 @@ static void submit_to_es(char * json, int json_len){
   es_send(json, json_len);
 }
 
+static inline void clean_value(monitor_counter_internal_t * p){
+  p->count = 0;
+  p->value = 0;
+  p->latency = 0;
+  p->latency_min = INFINITY;
+  p->latency_max = 0;
+}
+
 static void* reporting_thread(void * user){
   char json[1024*1024];
   int lastCounter;
@@ -140,19 +166,34 @@ static void* reporting_thread(void * user){
 
     ptr += sprintf(ptr, "{");
 
+    // print histograms
+    for(int i=0; i < HIST_LAST; i++){
+      monitor_counter_internal_t * p;
+      for(int j = 0; j < HIST_BUCKETS - 1; j++){
+        p = & monitor.hist[monitor.timestep][i].interval[j];
+        printf("%s_%dk: %d\n", hist_names[i], hist_sizes[j]/1024, p->count);
+        clean_value(p);
+      }
+      p = & monitor.hist[monitor.timestep][i].interval[HIST_BUCKETS-1];
+      printf("%s_large: %d\n", hist_names[i], p->count);
+      clean_value(p);
+    }
+    //
+
     for(int i=0; i < lastCounter; i++){
       monitor_counter_internal_t * p = & monitor.value[monitor.timestep][i];
       double mean_latency = p->latency / p->value;
       if (options.verbosity > 3){
-        fprintf(monitor.logfile, "%s: %d %"PRIu64" %e\n", counter[i].name, p->count, p->value, mean_latency);
+        fprintf(monitor.logfile, "%s: %d %"PRIu64" %e %e %e\n", counter[i].name, p->count, p->value, mean_latency, p->latency_min, p->latency_max);
       }
       if( options.es_server ){
         if(i > 0) ptr += sprintf(ptr, ",");
         ptr += sprintf(ptr, "\"%s\":%d",  counter[i].name, p->count);
+        ptr += sprintf(ptr, ", \"%s_l\":%e",  counter[i].name, p->latency);
+        ptr += sprintf(ptr, ", \"%s_lmin\":%e",  counter[i].name, p->latency_min);
+        ptr += sprintf(ptr, ", \"%s_lmax\":%e",  counter[i].name, p->latency_max);
       }
-      p->count = 0;
-      p->value = 0;
-      p->latency = 0;
+      clean_value(p);
     }
     if (options.verbosity > 5){
       fflush(monitor.logfile);
@@ -167,22 +208,46 @@ void monitor_start_activity(monitor_activity_t* activity){
   activity->t_start = clock();
 }
 
+
+static inline void update_counter(monitor_counter_internal_t * counter, double time, uint64_t count){
+  // On some machine may be not thread safe and lead to some inaccuracy, we accept this for performance
+  counter->count++;
+  counter->value += count;
+  counter->latency += time;
+  if(time < counter->latency_min){
+    counter->latency_min = time;
+  }
+  if(time > counter->latency_max){
+    counter->latency_max = time;
+  }
+}
+
+static void inline update_hist(enum hist_type_t type, int ts, double t, uint64_t size){
+  int i;
+  for(i = 0; i < HIST_BUCKETS - 1; i++){
+    if(size < hist_sizes[i]){
+      break;
+    }
+  }
+  update_counter(& monitor.hist[ts][type].interval[i], t, size);
+}
+
+
 void monitor_end_activity(monitor_activity_t* activity, monitor_counter_t * counter, uint64_t count){
   clock_t t_end;
   t_end = clock();
   double t = ((double) (t_end - activity->t_start)) / CLOCKS_PER_SEC;
+
   int ts = monitor.timestep;
-  int type = counter->type;
-  // On some machine may be not thread safe and lead to some inaccuracy, we accept this for performance
-  monitor.value[ts][type].value += count;
-  monitor.value[ts][type].latency += t;
-  monitor.value[ts][type].count++;
+  update_counter(& monitor.value[ts][counter->type], t, count);
 
   if(counter->parent_type != COUNTER_NONE){
-    type = counter->parent_type;
-    monitor.value[ts][type].value += count;
-    monitor.value[ts][type].latency += t;
-    monitor.value[ts][type].count++;
+    update_counter(& monitor.value[ts][counter->parent_type], t, count);
+  }
+  if(counter->type == COUNTER_READ){
+    update_hist(HIST_READ, ts, t, count);
+  }else if (counter->type == COUNTER_WRITE ){
+    update_hist(HIST_WRITE, ts, t, count);
   }
 }
 
