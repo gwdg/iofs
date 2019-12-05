@@ -79,8 +79,8 @@ monitor_counter_t counter[COUNTER_LAST] = {
   {"utimens", COUNTER_UTIMENS, COUNTER_MD_MOD},
   {"create", COUNTER_CREATE, COUNTER_MD_MOD},
   {"open", COUNTER_OPEN, COUNTER_MD_GET},
-  {"read_buf", COUNTER_READ_BUF, COUNTER_NONE},
-  {"write_buf", COUNTER_WRITE_BUF, COUNTER_NONE},
+  {"read_buf", COUNTER_READ_BUF, COUNTER_READ},
+  {"write_buf", COUNTER_WRITE_BUF, COUNTER_WRITE},
   {"statfs", COUNTER_STATFS, COUNTER_MD_OTHER},
   {"flush", COUNTER_FLUSH, COUNTER_NONE},
   {"release", COUNTER_RELEASE, COUNTER_NONE},
@@ -187,11 +187,11 @@ static void* reporting_thread(void * user){
         fprintf(monitor.logfile, "%s: %d %"PRIu64" %e %e %e\n", counter[i].name, p->count, p->value, mean_latency, p->latency_min, p->latency_max);
       }
       if( options.es_server ){
-        if(i > 0) ptr += sprintf(ptr, ",");
+        if(i > 0) ptr += sprintf(ptr, ",\n");
         ptr += sprintf(ptr, "\"%s\":%d",  counter[i].name, p->count);
-        ptr += sprintf(ptr, ", \"%s_l\":%e",  counter[i].name, p->latency);
-        ptr += sprintf(ptr, ", \"%s_lmin\":%e",  counter[i].name, p->latency_min);
-        ptr += sprintf(ptr, ", \"%s_lmax\":%e",  counter[i].name, p->latency_max);
+        ptr += sprintf(ptr, ",\n\"%s_l\":%e",  counter[i].name, p->latency);
+        ptr += sprintf(ptr, ",\n\"%s_lmin\":%e",  counter[i].name, p->latency_min);
+        ptr += sprintf(ptr, ",\n\"%s_lmax\":%e",  counter[i].name, p->latency_max);
       }
       clean_value(p);
     }

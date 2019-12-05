@@ -23,7 +23,7 @@
  */
 
 // Use if you want to use the kernel cache...
-//#define USE_KERNEL_CACHE
+#define USE_KERNEL_CACHE
 
 #define FUSE_USE_VERSION 36
 #define HAVE_UTIMENSAT
@@ -701,7 +701,7 @@ static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
     .es_server = "localhost",
     .es_server_port = "8080",
     .es_uri = "iofs/",
-    .detailed_logging = 0,
+    .detailed_logging = 1,
   };
 
   monitor_init(& options);
