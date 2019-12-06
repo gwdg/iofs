@@ -698,9 +698,10 @@ static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
     .logfile = "/tmp/iofs.log",
     .verbosity = 10,
     .interval = 1,
-    .es_server = "localhost",
-    .es_server_port = "8080",
-    .es_uri = "iofs/",
+    //.es_server = "localhost",
+    .es_server = "10.215.0.35",
+    .es_server_port = "9200",
+    .es_uri = "iofs",
     .detailed_logging = 1,
   };
 

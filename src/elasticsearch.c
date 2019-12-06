@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <math.h>
+#include <sys/ioctl.h>
 
 #include <iofs-monitor.h>
 
@@ -97,6 +98,9 @@ monitor_counter_t counter[COUNTER_LAST] = {
 static void es_send(char* data, int len){
   // send the data to the server
   ssize_t pos = 0;
+  if(options.verbosity > 5){
+    printf("%s\n", data);
+  }
   while(pos != len){
     ssize_t ret = write(monitor.es_fd, & data[pos], len - pos);
     if ( ret == -1 ){
@@ -138,9 +142,18 @@ static void submit_to_es(char * json, int json_len){
 
   // send the header to the server
   char buff[1024];
-  int len = sprintf(buff, "POST /%s HTTP/1.1\nHost: \"%s\"\nContent-Length: %d\nContent-Type: application/x-www-form-urlencoded\n\n", options.es_uri, options.es_server, json_len);
+  int len = sprintf(buff, "POST /%s/_doc HTTP/1.1\nHost: \"%s\"\nContent-Length: %d\nContent-Type: application/json\nAccept-Encoding: identity\nconnection: keep-alive\n\n", options.es_uri, options.es_server, json_len);
   es_send(buff, len);
   es_send(json, json_len);
+
+  // TODO check reply
+  int count;
+  ioctl(monitor.es_fd, FIONREAD, &count);
+  read(monitor.es_fd, json, count);
+  int reply = atoi(json + 9); // HTTP/1.1
+  if(reply != 201) {
+    printf("Reply from Elasticsearch is unexpected: %d %s\n", reply, json);
+  }
 }
 
 static inline void clean_value(monitor_counter_internal_t * p){
@@ -159,6 +172,7 @@ static void* reporting_thread(void * user){
   }else{
     lastCounter = COUNTER_WRITE + 1;
   }
+  int first_iteration = 1;
   while(monitor.started){
     sleep(options.interval);
     char * ptr = json;
@@ -166,16 +180,20 @@ static void* reporting_thread(void * user){
 
     ptr += sprintf(ptr, "{");
 
+    time_t seconds;
+    seconds = time(NULL);
+    ptr += sprintf(ptr, "\"time\" : %ld,", seconds);
+
     // print histograms
     for(int i=0; i < HIST_LAST; i++){
       monitor_counter_internal_t * p;
       for(int j = 0; j < HIST_BUCKETS - 1; j++){
         p = & monitor.hist[monitor.timestep][i].interval[j];
-        printf("%s_%dk: %d\n", hist_names[i], hist_sizes[j]/1024, p->count);
+        ptr += sprintf(ptr,"\n\"%s_%dk\": %d,", hist_names[i], hist_sizes[j]/1024, p->count);
         clean_value(p);
       }
       p = & monitor.hist[monitor.timestep][i].interval[HIST_BUCKETS-1];
-      printf("%s_large: %d\n", hist_names[i], p->count);
+      ptr += sprintf(ptr, "\n\"%s_large\": %d,", hist_names[i], p->count);
       clean_value(p);
     }
     //
@@ -189,17 +207,23 @@ static void* reporting_thread(void * user){
       if( options.es_server ){
         if(i > 0) ptr += sprintf(ptr, ",\n");
         ptr += sprintf(ptr, "\"%s\":%d",  counter[i].name, p->count);
-        ptr += sprintf(ptr, ",\n\"%s_l\":%e",  counter[i].name, p->latency);
-        ptr += sprintf(ptr, ",\n\"%s_lmin\":%e",  counter[i].name, p->latency_min);
-        ptr += sprintf(ptr, ",\n\"%s_lmax\":%e",  counter[i].name, p->latency_max);
+        if(p->latency_min != INFINITY){
+          ptr += sprintf(ptr, ",\n\"%s_l\":%e",  counter[i].name, p->latency);
+          ptr += sprintf(ptr, ",\n\"%s_lmin\":%e",  counter[i].name, p->latency_min);
+          ptr += sprintf(ptr, ",\n\"%s_lmax\":%e",  counter[i].name, p->latency_max);
+        }
       }
       clean_value(p);
     }
     if (options.verbosity > 5){
       fflush(monitor.logfile);
     }
+
     ptr += sprintf(ptr, "}\n");
-    submit_to_es(json, (int)(ptr - json));
+    if (! first_iteration){
+      submit_to_es(json, (int)(ptr - json));
+    }
+    first_iteration = 0;
   }
   return NULL;
 }
@@ -244,9 +268,9 @@ void monitor_end_activity(monitor_activity_t* activity, monitor_counter_t * coun
   if(counter->parent_type != COUNTER_NONE){
     update_counter(& monitor.value[ts][counter->parent_type], t, count);
   }
-  if(counter->type == COUNTER_READ){
+  if(counter->type == COUNTER_READ || counter->parent_type == COUNTER_READ){
     update_hist(HIST_READ, ts, t, count);
-  }else if (counter->type == COUNTER_WRITE ){
+  }else if (counter->type == COUNTER_WRITE || counter->parent_type == COUNTER_WRITE){
     update_hist(HIST_WRITE, ts, t, count);
   }
 }
