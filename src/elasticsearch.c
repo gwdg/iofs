@@ -45,7 +45,9 @@ typedef struct {
   int started;
   pthread_t reporting_thread;
   FILE * logfile;
+  FILE * outfile;
   int es_fd; // es file descriptor
+  int in_fd; // influx file descriptor
 
   int timestep;
   monitor_counter_internal_t  value[2][COUNTER_LAST]; // two timesteps
@@ -56,9 +58,9 @@ static monitor_options_t options;
 static monitor_internal_t monitor;
 
 monitor_counter_t counter[COUNTER_LAST] = {
-  {"MD get", COUNTER_MD_GET, COUNTER_NONE},
-  {"MD mod", COUNTER_MD_MOD, COUNTER_NONE},
-  {"MD other", COUNTER_MD_OTHER, COUNTER_NONE},
+  {"MD_get", COUNTER_MD_GET, COUNTER_NONE},
+  {"MD_mod", COUNTER_MD_MOD, COUNTER_NONE},
+  {"MD_other", COUNTER_MD_OTHER, COUNTER_NONE},
   {"read", COUNTER_READ, COUNTER_NONE},
   {"write", COUNTER_WRITE, COUNTER_NONE},
 
@@ -95,11 +97,77 @@ monitor_counter_t counter[COUNTER_LAST] = {
   {"flock", COUNTER_FLOCK, COUNTER_NONE},
   };
 
+static void in_send(char* data, int len){
+  // send the data to the server
+  ssize_t pos = 0;
+  if(options.verbosity > 5){
+    fprintf(monitor.logfile, "%s", data);
+      fflush(monitor.logfile);
+
+  }
+  while(pos != len){
+    ssize_t ret = write(monitor.in_fd, & data[pos], len - pos);
+    if ( ret == -1 ){
+      monitor.in_fd = 0;
+      fprintf(monitor.logfile, "error during sending to in: %s", strerror(errno));
+      fflush(monitor.logfile);
+      break;
+    }
+    fprintf(monitor.logfile, "%d, %d\n", pos, ret);
+    pos += ret;
+  }
+}
+
+static void submit_to_influx(char * linep, int linep_len) {
+  if(! options.in_server ) return;
+
+  if (monitor.in_fd == 0){
+    struct addrinfo hints;
+    memset(&hints,0,sizeof(hints));
+    hints.ai_family=AF_UNSPEC;
+    hints.ai_socktype=SOCK_STREAM;
+    hints.ai_protocol=0;
+    hints.ai_flags=AI_ADDRCONFIG;
+    struct addrinfo* res=0;
+    int err=getaddrinfo(options.in_server, options.in_server_port, &hints, &res);
+    if (err!=0) {
+      fprintf(monitor.logfile, "failed to resolve remote socket address (err=%d)" ,err);
+    }
+
+    int sockfd;
+    sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (sockfd == -1) {
+        fprintf(monitor.logfile, "Socket creation failed: %s\n", strerror(errno));
+    }
+    if (connect(sockfd, res->ai_addr, res->ai_addrlen) != 0) {
+        fprintf(monitor.logfile, "Connection with the server %s:%s failed:  %s\n", options.in_server, options.in_server_port, strerror(errno));
+        return;
+    }
+    monitor.in_fd = sockfd;
+  }
+
+  // send the header to the server
+  char buff[1024];
+  int len = sprintf(buff, "POST /write?db=%s HTTP/1.1\nHost: %s\nContent-Length: %d\nContent-Type: application/x-www-form-urlencoded\nAccept-Encoding: text/plain\n\n", options.in_db, options.in_server, linep_len);
+  in_send(buff, len);
+  in_send(linep, linep_len);
+
+  // TODO check reply
+  int count;
+  ioctl(monitor.in_fd, FIONREAD, &count);
+  read(monitor.in_fd, linep, count);
+  int reply = atoi(linep + 9); // HTTP/1.1
+  if(reply != 201) {
+    fprintf(monitor.logfile,"Reply from InfluxDB is unexpected: %d %s\n", reply, linep);
+      fflush(monitor.logfile);
+  }
+}
+
 static void es_send(char* data, int len){
   // send the data to the server
   ssize_t pos = 0;
   if(options.verbosity > 5){
-    printf("%s\n", data);
+    fprintf(monitor.logfile, "%s\n", data);
   }
   while(pos != len){
     ssize_t ret = write(monitor.es_fd, & data[pos], len - pos);
@@ -166,6 +234,7 @@ static inline void clean_value(monitor_counter_internal_t * p){
 
 static void* reporting_thread(void * user){
   char json[1024*1024];
+  char linep[1024*1024];
   int lastCounter;
   if (options.detailed_logging){
     lastCounter = COUNTER_LAST;
@@ -176,9 +245,11 @@ static void* reporting_thread(void * user){
   while(monitor.started){
     sleep(options.interval);
     char * ptr = json;
+    char * lineptr = linep;
     monitor.timestep = (monitor.timestep + 1) % 2;
 
     ptr += sprintf(ptr, "{");
+    lineptr += sprintf(lineptr, "iofs,mytag=myvalue ");
 
     time_t seconds;
     seconds = time(NULL);
@@ -190,39 +261,52 @@ static void* reporting_thread(void * user){
       for(int j = 0; j < HIST_BUCKETS - 1; j++){
         p = & monitor.hist[monitor.timestep][i].interval[j];
         ptr += sprintf(ptr,"\n\"%s_%dk\": %d,", hist_names[i], hist_sizes[j]/1024, p->count);
+        lineptr += sprintf(lineptr,"%s_%dk=%d,", hist_names[i], hist_sizes[j]/1024, p->count);
         clean_value(p);
       }
       p = & monitor.hist[monitor.timestep][i].interval[HIST_BUCKETS-1];
       ptr += sprintf(ptr, "\n\"%s_large\": %d,", hist_names[i], p->count);
+      lineptr += sprintf(lineptr, "%s_large=%d,", hist_names[i], p->count);
       clean_value(p);
     }
     //
 
     for(int i=0; i < lastCounter; i++){
       monitor_counter_internal_t * p = & monitor.value[monitor.timestep][i];
-      double mean_latency = p->latency / p->value;
-      if (options.verbosity > 3){
-        fprintf(monitor.logfile, "%s: %d %"PRIu64" %e %e %e\n", counter[i].name, p->count, p->value, mean_latency, p->latency_min, p->latency_max);
-      }
-      if( options.es_server ){
-        if(i > 0) ptr += sprintf(ptr, ",\n");
-        ptr += sprintf(ptr, "\"%s\":%d",  counter[i].name, p->count);
-        if(p->latency_min != INFINITY){
-          ptr += sprintf(ptr, ",\n\"%s_l\":%e",  counter[i].name, p->latency);
-          ptr += sprintf(ptr, ",\n\"%s_lmin\":%e",  counter[i].name, p->latency_min);
-          ptr += sprintf(ptr, ",\n\"%s_lmax\":%e",  counter[i].name, p->latency_max);
-        }
+//      double mean_latency = p->latency / p->value;
+      if(i > 0) ptr += sprintf(ptr, ",\n");
+      ptr += sprintf(ptr, "\n\"%s\":%d",  counter[i].name, p->count);
+      lineptr += sprintf(lineptr, "%s=%d,",  counter[i].name, p->count);
+      if(p->latency_min != INFINITY){
+        ptr += sprintf(ptr, ",\n\"%s_l\":%e",  counter[i].name, p->latency);
+        ptr += sprintf(ptr, ",\n\"%s_lmin\":%e",  counter[i].name, p->latency_min);
+        ptr += sprintf(ptr, ",\n\"%s_lmax\":%e",  counter[i].name, p->latency_max);
+        lineptr += sprintf(lineptr, "%s_l=%g,",  counter[i].name, p->latency);
+        lineptr += sprintf(lineptr, "%s_lmin=%g,",  counter[i].name, p->latency_min);
+        lineptr += sprintf(lineptr, "%s_lmax=%g,",  counter[i].name, p->latency_max);
       }
       clean_value(p);
     }
+
+    ptr += sprintf(ptr, "}\n");
+    lineptr--;
+    lineptr += sprintf(lineptr, " %d000000000\n", seconds);
+
+    if (monitor.outfile) {
+      fprintf(monitor.outfile, "%s", linep);
+      fflush(monitor.outfile);
+    }
+
     if (options.verbosity > 5){
       fflush(monitor.logfile);
     }
 
-    ptr += sprintf(ptr, "}\n");
-    if (! first_iteration){
-      submit_to_es(json, (int)(ptr - json));
-    }
+    if (! first_iteration)
+      if (options.es_server)
+        submit_to_es(json, (int)(ptr - json));
+      if (options.in_server)
+        submit_to_influx(linep, (int)(lineptr - linep));
+
     first_iteration = 0;
   }
   return NULL;
@@ -281,6 +365,13 @@ void monitor_init(monitor_options_t * o){
   monitor.logfile = fopen(o->logfile, "w+");
   if(! monitor.logfile) monitor.logfile = fopen(o->logfile, "w");
   if(! monitor.logfile) monitor.logfile = stderr;
+
+  if (o->outfile) {
+    monitor.outfile = fopen(o->outfile, "w+");
+    if(! monitor.outfile) monitor.outfile = fopen(o->outfile, "w");
+    if(! monitor.outfile)
+      fprintf(monitor.outfile, "Error: Could not open output file at %s\b", o->outfile);
+  }
   memset(monitor.value, 0, sizeof(monitor.value));
 
   monitor.started = 1;

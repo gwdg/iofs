@@ -1,6 +1,3 @@
-#ifndef IOFS_MONITOR_H
-#define IOFS_MONITOR_H
-
 #include <stdint.h>
 #include <time.h>
 
@@ -47,11 +44,15 @@ enum counter_type_t{
 
 typedef struct {
   char * logfile;
+  char * outfile;
   int detailed_logging;
   int verbosity;
   char * es_server;
   char * es_server_port;
   char * es_uri;
+  char * in_server;
+  char * in_server_port;
+  char * in_db;
   int interval;
 } monitor_options_t;
 
@@ -63,7 +64,7 @@ struct monitor_counter_t{
 
 
 typedef struct monitor_counter_t monitor_counter_t;
-monitor_counter_t counter[COUNTER_LAST];
+extern monitor_counter_t counter[];
 
 struct monitor_activity_t{
   clock_t t_start;
@@ -79,5 +80,3 @@ void monitor_finalize();
  */
 void monitor_start_activity(monitor_activity_t* activity);
 void monitor_end_activity(monitor_activity_t* activity, monitor_counter_t * counter, uint64_t value);
-
-#endif
