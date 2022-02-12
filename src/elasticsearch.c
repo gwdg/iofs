@@ -48,7 +48,7 @@ typedef struct {
   FILE * logfile;
   FILE * outfile;
   int es_fd; // es file descriptor
-  int in_fd; // influx file descriptor
+  CURL *curl;
 
   int timestep;
   monitor_counter_internal_t  value[2][COUNTER_LAST]; // two timesteps
@@ -98,94 +98,17 @@ monitor_counter_t counter[COUNTER_LAST] = {
   {"flock", COUNTER_FLOCK, COUNTER_NONE},
   };
 
-static void in_send(char* data, int len){
-  // send the data to the server
-  ssize_t pos = 0;
-  if(options.verbosity > 5){
-    fprintf(monitor.logfile, "%s", data);
-      fflush(monitor.logfile);
-
-  }
-  while(pos != len){
-    ssize_t ret = write(monitor.in_fd, & data[pos], len - pos);
-    if ( ret == -1 ){
-      monitor.in_fd = 0;
-      fprintf(monitor.logfile, "error during sending to in: %s", strerror(errno));
-      fflush(monitor.logfile);
-      break;
-    }
-    fprintf(monitor.logfile, "%d, %d\n", pos, ret);
-    pos += ret;
-  }
-}
-
 static void curl_to_influx(char * linep, int linep_len) {
-  CURL *curl;
   CURLcode res;
+  char url[1024];
+  sprintf(url, "%s:%s/write?db=%s", options.in_server, options.in_server_port, options.in_db);
+  curl_easy_setopt(monitor.curl, CURLOPT_URL, url);
+  curl_easy_setopt(monitor.curl, CURLOPT_POSTFIELDS, linep);
 
-  curl_global_init(CURL_GLOBAL_DEFAULT);
- 
-  curl = curl_easy_init();
-  if(curl) {
-    char url[1024];
-    sprintf(url, "%s:%s/write?db=%s", options.in_server, options.in_server_port, options.in_db);
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, linep);
+  res = curl_easy_perform(monitor.curl);
 
-    res = curl_easy_perform(curl);
-    /* Check for errors */
-    if(res != CURLE_OK)
-      fprintf(monitor.logfile, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
- 
-    /* always cleanup */
-    curl_easy_cleanup(curl);
-  }
- 
-  curl_global_cleanup();
-}
-static void submit_to_influx(char * linep, int linep_len) {
-  if(! options.in_server ) return;
-
-  if (monitor.in_fd == 0){
-    struct addrinfo hints;
-    memset(&hints,0,sizeof(hints));
-    hints.ai_family=AF_UNSPEC;
-    hints.ai_socktype=SOCK_STREAM;
-    hints.ai_protocol=0;
-    hints.ai_flags=AI_ADDRCONFIG;
-    struct addrinfo* res=0;
-    int err=getaddrinfo(options.in_server, options.in_server_port, &hints, &res);
-    if (err!=0) {
-      fprintf(monitor.logfile, "failed to resolve remote socket address (err=%d)" ,err);
-    }
-
-    int sockfd;
-    sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    if (sockfd == -1) {
-        fprintf(monitor.logfile, "Socket creation failed: %s\n", strerror(errno));
-    }
-    if (connect(sockfd, res->ai_addr, res->ai_addrlen) != 0) {
-        fprintf(monitor.logfile, "Connection with the server %s:%s failed:  %s\n", options.in_server, options.in_server_port, strerror(errno));
-        return;
-    }
-    monitor.in_fd = sockfd;
-  }
-
-  // send the header to the server
-  char buff[1024];
-  int len = sprintf(buff, "POST /write?db=%s&u=hpc&p=aCR73eG1bHbd HTTP/1.1\nHost: %s\nContent-Length: %d\nContent-Type: application/x-www-form-urlencoded\nAccept-Encoding: text/plain\n\n", options.in_db, options.in_server, linep_len);
-  in_send(buff, len);
-  in_send(linep, linep_len);
-
-  // TODO check reply
-  int count;
-  ioctl(monitor.in_fd, FIONREAD, &count);
-  read(monitor.in_fd, linep, count);
-  int reply = atoi(linep + 9); // HTTP/1.1
-  if(reply != 201) {
-    fprintf(monitor.logfile,"Reply from InfluxDB is unexpected: %d %s\n", reply, linep);
-      fflush(monitor.logfile);
-  }
+  if(res != CURLE_OK)
+    fprintf(monitor.logfile, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 }
 
 static void es_send(char* data, int len){
@@ -259,7 +182,6 @@ static inline void clean_value(monitor_counter_internal_t * p){
 
 static void* reporting_thread(void * user){
   char json[1024*1024];
-  //char linep[1024*1024];
   char *linep = (char*) malloc(1024*1024*sizeof(char));
   int lastCounter;
   if (options.detailed_logging){
@@ -335,8 +257,8 @@ static void* reporting_thread(void * user){
 
     first_iteration = 0;
   }
-  return NULL;
   free(linep);
+  return NULL;
 }
 
 void monitor_start_activity(monitor_activity_t* activity){
@@ -401,6 +323,11 @@ void monitor_init(monitor_options_t * o){
   }
   memset(monitor.value, 0, sizeof(monitor.value));
 
+  if (options.in_server) {
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    monitor.curl = curl_easy_init();
+  }
+
   monitor.started = 1;
   if(pthread_create(& monitor.reporting_thread, NULL, reporting_thread, NULL)){
     fprintf(monitor.logfile, "Error couldn't create background reporting thread\n");
@@ -414,4 +341,9 @@ void monitor_finalize(){
     fprintf(monitor.logfile, "Error joining background thread\n");
   }
   fclose(monitor.logfile);
+  fclose(monitor.outfile);
+  if(options.in_server) {
+    curl_easy_cleanup(monitor.curl);
+    curl_global_cleanup();
+  }
 }
