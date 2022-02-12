@@ -173,7 +173,7 @@ static void submit_to_influx(char * linep, int linep_len) {
 
   // send the header to the server
   char buff[1024];
-  int len = sprintf(buff, "POST /write?db=%s HTTP/1.1\nHost: %s\nContent-Length: %d\nContent-Type: application/x-www-form-urlencoded\nAccept-Encoding: text/plain\n\n", options.in_db, options.in_server, linep_len);
+  int len = sprintf(buff, "POST /write?db=%s&u=hpc&p=aCR73eG1bHbd HTTP/1.1\nHost: %s\nContent-Length: %d\nContent-Type: application/x-www-form-urlencoded\nAccept-Encoding: text/plain\n\n", options.in_db, options.in_server, linep_len);
   in_send(buff, len);
   in_send(linep, linep_len);
 
@@ -259,7 +259,8 @@ static inline void clean_value(monitor_counter_internal_t * p){
 
 static void* reporting_thread(void * user){
   char json[1024*1024];
-  char linep[1024*1024];
+  //char linep[1024*1024];
+  char *linep = (char*) malloc(1024*1024*sizeof(char));
   int lastCounter;
   if (options.detailed_logging){
     lastCounter = COUNTER_LAST;
@@ -298,7 +299,7 @@ static void* reporting_thread(void * user){
 
     for(int i=0; i < lastCounter; i++){
       monitor_counter_internal_t * p = & monitor.value[monitor.timestep][i];
-//      double mean_latency = p->latency / p->value;
+      double mean_latency = p->latency / p->value;
       if(i > 0) ptr += sprintf(ptr, ",\n");
       ptr += sprintf(ptr, "\n\"%s\":%d",  counter[i].name, p->count);
       lineptr += sprintf(lineptr, "%s=%d,",  counter[i].name, p->count);
@@ -335,6 +336,7 @@ static void* reporting_thread(void * user){
     first_iteration = 0;
   }
   return NULL;
+  free(linep);
 }
 
 void monitor_start_activity(monitor_activity_t* activity){
