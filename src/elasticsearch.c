@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <math.h>
 #include <sys/ioctl.h>
+#include <curl/curl.h>
 
 #include <iofs-monitor.h>
 
@@ -118,6 +119,30 @@ static void in_send(char* data, int len){
   }
 }
 
+static void curl_to_influx(char * linep, int linep_len) {
+  CURL *curl;
+  CURLcode res;
+
+  curl_global_init(CURL_GLOBAL_DEFAULT);
+ 
+  curl = curl_easy_init();
+  if(curl) {
+    char url[1024];
+    sprintf(url, "%s:%s/write?db=%s", options.in_server, options.in_server_port, options.in_db);
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, linep);
+
+    res = curl_easy_perform(curl);
+    /* Check for errors */
+    if(res != CURLE_OK)
+      fprintf(monitor.logfile, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+ 
+    /* always cleanup */
+    curl_easy_cleanup(curl);
+  }
+ 
+  curl_global_cleanup();
+}
 static void submit_to_influx(char * linep, int linep_len) {
   if(! options.in_server ) return;
 
@@ -305,7 +330,7 @@ static void* reporting_thread(void * user){
       if (options.es_server)
         submit_to_es(json, (int)(ptr - json));
       if (options.in_server)
-        submit_to_influx(linep, (int)(lineptr - linep));
+        curl_to_influx(linep, (int)(lineptr - linep));
 
     first_iteration = 0;
   }
