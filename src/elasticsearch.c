@@ -227,9 +227,11 @@ static void* reporting_thread(void * user){
       lineptr += sprintf(lineptr, "%s=%d,",  counter[i].name, p->count);
       if(p->latency_min != INFINITY){
         ptr += sprintf(ptr, ",\n\"%s_l\":%e",  counter[i].name, p->latency);
+        ptr += sprintf(ptr, ",\n\"%s_lmean\":%e",  counter[i].name, mean_latency);
         ptr += sprintf(ptr, ",\n\"%s_lmin\":%e",  counter[i].name, p->latency_min);
         ptr += sprintf(ptr, ",\n\"%s_lmax\":%e",  counter[i].name, p->latency_max);
         lineptr += sprintf(lineptr, "%s_l=%g,",  counter[i].name, p->latency);
+        lineptr += sprintf(lineptr, "%s_lmean=%g,",  counter[i].name, mean_latency);
         lineptr += sprintf(lineptr, "%s_lmin=%g,",  counter[i].name, p->latency_min);
         lineptr += sprintf(lineptr, "%s_lmax=%g,",  counter[i].name, p->latency_max);
       }
@@ -269,6 +271,9 @@ void monitor_start_activity(monitor_activity_t* activity){
 static inline void update_counter(monitor_counter_internal_t * counter, double time, uint64_t count){
   // On some machine may be not thread safe and lead to some inaccuracy, we accept this for performance
   counter->count++;
+  //count != counter->count
+  //counter->count: how often was operation called
+  //counter->value: size for read/write and 1 for other
   counter->value += count;
   counter->latency += time;
   if(time < counter->latency_min){
