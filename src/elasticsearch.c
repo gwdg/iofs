@@ -98,7 +98,7 @@ monitor_counter_t counter[COUNTER_LAST] = {
   {"flock", COUNTER_FLOCK, COUNTER_NONE},
   };
 
-static void curl_to_influx(char * linep, int linep_len) {
+static void curl_to_influx(char * linep) {
   CURLcode res;
   char url[1024];
   sprintf(url, "%s:%s/write?db=%s", options.in_server, options.in_server_port, options.in_db);
@@ -180,6 +180,89 @@ static inline void clean_value(monitor_counter_internal_t * p){
   p->latency_max = 0;
 }
 
+static void format_influx(char *linep) {
+  char * ptr = linep;
+
+  //TODO: Should be set in cli or config file
+  char measurement[] = "iofs";
+  char tags[] = "mytag=myvalue";
+
+  time_t seconds;
+  seconds = time(NULL);
+
+  //TODO: should be moved, calling it twice
+  int lastCounter;
+  if (options.detailed_logging){
+    lastCounter = COUNTER_LAST;
+  }else{
+    lastCounter = COUNTER_WRITE + 1;
+  }
+
+  for(int a=0; a < HIST_BUCKETS; a++){
+    monitor_counter_internal_t * p;
+    ptr += sprintf(ptr, "%s,%s", measurement, tags);
+    if (a < HIST_BUCKETS - 1)
+      ptr += sprintf(ptr, ",size=%d ", hist_sizes[a]);
+    else
+      ptr += sprintf(ptr, ",size=large ");
+
+    for(int j=0; j < HIST_LAST; j++){
+      p = & monitor.hist[monitor.timestep][j].interval[a];
+      ptr += sprintf(ptr,"%s=%d,", hist_names[j], p->count);
+    }
+    ptr--;
+    ptr += sprintf(ptr, " %d000000000\n", seconds);
+  }
+
+  char count_str[1024*1024];
+  char l_str[1024*1024];
+  char lmean_str[1024*1024];
+  char lmin_str[1024*1024];
+  char lmax_str[1024*1024];
+
+  char * count_ptr = count_str;
+  count_ptr += sprintf(count_ptr, "%s,%s ", measurement, tags);
+  char * l_ptr = l_str;
+  l_ptr += sprintf(l_ptr, "%s,%s,latency=sum ", measurement, tags);
+  char * lmean_ptr = lmean_str;
+  lmean_ptr += sprintf(lmean_ptr, "%s,%s,latency=mean ", measurement, tags);
+  char * lmin_ptr = lmin_str;
+  lmin_ptr += sprintf(lmin_ptr, "%s,%s,latency=min ", measurement, tags);
+  char * lmax_ptr = lmax_str;
+  lmax_ptr += sprintf(lmax_ptr, "%s,%s,latency=max ", measurement, tags);
+
+  //if no latency reported at all, don't try to send it to influx!
+  int latency = 0;
+  for(int i=0; i < lastCounter; i++){
+    monitor_counter_internal_t * p = & monitor.value[monitor.timestep][i];
+    count_ptr += sprintf(count_ptr, "%s=%d,",  counter[i].name, p->count);
+
+    if(p->value && p->latency_min != INFINITY){
+      latency = 1;
+      l_ptr += sprintf(l_ptr, "%s=%g,", counter[i].name, p->latency);
+      lmean_ptr += sprintf(lmean_ptr, "%s=%g,", counter[i].name, p->latency / p->value);
+      lmin_ptr += sprintf(lmin_ptr, "%s=%g,", counter[i].name, p->latency_min);
+      lmax_ptr += sprintf(lmax_ptr, "%s=%g,", counter[i].name, p->latency_max);
+    }
+  }
+
+  //delete the last , with --
+  sprintf(--count_ptr, " %d000000000", seconds);
+  sprintf(--l_ptr, " %d000000000", seconds);
+  sprintf(--lmean_ptr, " %d000000000", seconds);
+  sprintf(--lmin_ptr, " %d000000000", seconds);
+  sprintf(--lmax_ptr, " %d000000000", seconds);
+
+  ptr += sprintf(ptr, "%s\n", count_str);
+  if (latency) {
+    ptr += sprintf(ptr, "%s\n", l_str);
+    ptr += sprintf(ptr, "%s\n", lmean_str);
+    ptr += sprintf(ptr, "%s\n", lmin_str);
+    ptr += sprintf(ptr, "%s\n", lmax_str);
+  }
+}
+
+
 static void* reporting_thread(void * user){
   char json[1024*1024];
   char *linep = (char*) malloc(1024*1024*sizeof(char));
@@ -193,11 +276,11 @@ static void* reporting_thread(void * user){
   while(monitor.started){
     sleep(options.interval);
     char * ptr = json;
-    char * lineptr = linep;
+    format_influx(linep);
+    
     monitor.timestep = (monitor.timestep + 1) % 2;
 
     ptr += sprintf(ptr, "{");
-    lineptr += sprintf(lineptr, "iofs,mytag=myvalue ");
 
     time_t seconds;
     seconds = time(NULL);
@@ -209,12 +292,10 @@ static void* reporting_thread(void * user){
       for(int j = 0; j < HIST_BUCKETS - 1; j++){
         p = & monitor.hist[monitor.timestep][i].interval[j];
         ptr += sprintf(ptr,"\n\"%s_%dk\": %d,", hist_names[i], hist_sizes[j]/1024, p->count);
-        lineptr += sprintf(lineptr,"%s_%dk=%d,", hist_names[i], hist_sizes[j]/1024, p->count);
         clean_value(p);
       }
       p = & monitor.hist[monitor.timestep][i].interval[HIST_BUCKETS-1];
       ptr += sprintf(ptr, "\n\"%s_large\": %d,", hist_names[i], p->count);
-      lineptr += sprintf(lineptr, "%s_large=%d,", hist_names[i], p->count);
       clean_value(p);
     }
     //
@@ -224,23 +305,16 @@ static void* reporting_thread(void * user){
       double mean_latency = p->latency / p->value;
       if(i > 0) ptr += sprintf(ptr, ",\n");
       ptr += sprintf(ptr, "\n\"%s\":%d",  counter[i].name, p->count);
-      lineptr += sprintf(lineptr, "%s=%d,",  counter[i].name, p->count);
       if(p->latency_min != INFINITY){
         ptr += sprintf(ptr, ",\n\"%s_l\":%e",  counter[i].name, p->latency);
         ptr += sprintf(ptr, ",\n\"%s_lmean\":%e",  counter[i].name, mean_latency);
         ptr += sprintf(ptr, ",\n\"%s_lmin\":%e",  counter[i].name, p->latency_min);
         ptr += sprintf(ptr, ",\n\"%s_lmax\":%e",  counter[i].name, p->latency_max);
-        lineptr += sprintf(lineptr, "%s_l=%g,",  counter[i].name, p->latency);
-        lineptr += sprintf(lineptr, "%s_lmean=%g,",  counter[i].name, mean_latency);
-        lineptr += sprintf(lineptr, "%s_lmin=%g,",  counter[i].name, p->latency_min);
-        lineptr += sprintf(lineptr, "%s_lmax=%g,",  counter[i].name, p->latency_max);
       }
       clean_value(p);
     }
 
     ptr += sprintf(ptr, "}\n");
-    lineptr--;
-    lineptr += sprintf(lineptr, " %d000000000\n", seconds);
 
     if (monitor.outfile) {
       fprintf(monitor.outfile, "%s", linep);
@@ -255,7 +329,7 @@ static void* reporting_thread(void * user){
       if (options.es_server)
         submit_to_es(json, (int)(ptr - json));
       if (options.in_server)
-        curl_to_influx(linep, (int)(lineptr - linep));
+        curl_to_influx(linep);
 
     first_iteration = 0;
   }
