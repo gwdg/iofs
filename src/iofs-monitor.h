@@ -51,7 +51,6 @@ typedef struct {
   char * es_server_port;
   char * es_uri;
   char * in_server;
-  char * in_server_port;
   char * in_db;
   int interval;
 } monitor_options_t;

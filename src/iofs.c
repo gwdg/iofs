@@ -697,13 +697,12 @@ static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
   monitor_options_t options = {
     .logfile = arguments.logfile,
     .outfile = arguments.outfile,
-    .verbosity = arguments.verbosity  ,
+    .verbosity = arguments.verbosity,
     .interval = arguments.interval,
     .es_server = arguments.es_server,
     .es_server_port = arguments.es_server_port,
     .es_uri = arguments.es_uri,
     .in_server = arguments.in_server,
-    .in_server_port = arguments.in_server_port,
     .in_db = arguments.in_db,
     .detailed_logging = 1,
   };
@@ -765,17 +764,21 @@ static struct fuse_operations cache_oper = {
 };
 
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 
-  /* Set argument defaults */
+  char config_path[BUF_LEN] = "/etc/iofs.conf";
+  const char * env_config = getenv("IOFS_CONFIG_PATH");
 
-  arguments.outfile = "/tmp/outfile";
-  arguments.logfile = "/tmp/iofs.log";
-  arguments.verbosity = 10;
-  arguments.interval = 1;
+#ifdef IOFS_CONFIG_PATH
+  sprintf(config_path, "%s", IOFS_CONFIG_PATH);
+#endif
+  if (env_config) {
+    sprintf(config_path, "%s", env_config);
+  }
+  if (read_config(config_path, &arguments)) {
+    printf("Could not read config file %s.\n");
+  }
 
-  /* Where the magic happens */
   argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
   printf("IOFS-trace version 0.8 %s on %s\n", argv[0], argv[argc-1]);
