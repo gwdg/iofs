@@ -28,11 +28,13 @@ typedef struct options_t
   char outfile[BUF_LEN];            /* Argument for -o */
   char logfile[BUF_LEN];            /* Argument for -o */
   char es_server[BUF_LEN], es_server_port[6], es_uri[BUF_LEN];
-  char in_server[BUF_LEN], in_db[BUF_LEN], in_username[BUF_LEN], in_password[BUF_LEN];
+  char in_server[BUF_LEN], in_db[BUF_LEN], in_username[BUF_LEN], in_password[BUF_LEN], in_tags[BUF_LEN];
   int verbosity;
   int detailed_logging;
   int interval;
 } options_t;
+
+static int append_tags(options_t *, char *);
 
 static options_t arguments = {
   .outfile = "/tmp/iofs.out",
@@ -41,6 +43,8 @@ static options_t arguments = {
   .detailed_logging = 1,
   .interval = 1,
   .es_server = "",
+  .in_server = "",
+  .in_username = "",
   .in_server = ""
 };
 
@@ -58,6 +62,7 @@ static struct argp_option arg_options[] = {
   {"es-uri", ES_URI, "no clue", 0, "something"},
   {"in-server", IN_SERVER, "http://localhost:8086", 0, "Location of the influxdb server with port"},
   {"in-db", IN_DB, "moep", 0, "database name"},
+  {"in-tags", 't', "cluster=hpc-1", 0, "Custom tags for InfluxDB"},
   {0}
 };
 
@@ -119,6 +124,10 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
         return 1;
       }
       break;
+    case 't':
+      //TODO: Do something if this fails
+      int ret = append_tags(arguments, arg);
+      break;
     case ARGP_KEY_ARG:
       if (state->arg_num >= 2)
         /* Too many arguments. */
@@ -148,6 +157,7 @@ static int parse_config(char *buf, options_t *arguments) {
   if (sscanf(buf, " influxdb-database = %s", arguments->in_db) == 1) return 0;
   if (sscanf(buf, " influxdb-username = %s", arguments->in_username) == 1) return 0;
   if (sscanf(buf, " influxdb-password = %s", arguments->in_password) == 1) return 0;
+  if (sscanf(buf, " influxdb-tags = %s", dummy) == 1) return append_tags(arguments, dummy);
   if (sscanf(buf, " elasticsearch-address = %s", arguments->es_server) == 1) return 0;
   if (sscanf(buf, " elasticsearch-port = %s", arguments->es_server_port) == 1) return 0;
   if (sscanf(buf, " elasticsearch-uri = %s", arguments->es_uri) == 1) return 0;
@@ -157,6 +167,18 @@ static int parse_config(char *buf, options_t *arguments) {
   if (sscanf(buf, " verbosity = %lu", arguments->verbosity) == 1) return 0;
   return 3; // syntax error
 }
+
+static int append_tags(options_t *arguments, char *tags) {
+  if (snprintf(
+        arguments->in_tags + strlen(arguments->in_tags),
+        BUF_LEN + strlen(arguments->in_tags), ",%s", tags)
+      > BUF_LEN) {
+    printf("Could not add tag %s, too many tags", tags);
+    return 5;
+  }
+  return 0;
+}
+
 
 int read_config (char * config_path, options_t *arguments) {
   FILE *f = fopen(config_path, "r");

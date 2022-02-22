@@ -188,14 +188,13 @@ static void format_influx(char *linep, int lastCounter) {
 
   //TODO: Should be set in cli or config file
   char measurement[] = "iofs";
-  char tags[] = "mytag=myvalue";
 
   time_t seconds;
   seconds = time(NULL);
 
   for(int a=0; a < HIST_BUCKETS; a++){
     monitor_counter_internal_t * p;
-    ptr += sprintf(ptr, "%s,%s", measurement, tags);
+    ptr += sprintf(ptr, "%s,%s", measurement, options.in_tags);
     if (a < HIST_BUCKETS - 1)
       ptr += sprintf(ptr, ",size=%d ", hist_sizes[a]);
     else
@@ -216,15 +215,15 @@ static void format_influx(char *linep, int lastCounter) {
   char lmax_str[1024*1024];
 
   char * count_ptr = count_str;
-  count_ptr += sprintf(count_ptr, "%s,%s ", measurement, tags);
+  count_ptr += sprintf(count_ptr, "%s,%s ", measurement, options.in_tags);
   char * l_ptr = l_str;
-  l_ptr += sprintf(l_ptr, "%s,%s,latency=sum ", measurement, tags);
+  l_ptr += sprintf(l_ptr, "%s,%s,latency=sum ", measurement, options.in_tags);
   char * lmean_ptr = lmean_str;
-  lmean_ptr += sprintf(lmean_ptr, "%s,%s,latency=mean ", measurement, tags);
+  lmean_ptr += sprintf(lmean_ptr, "%s,%s,latency=mean ", measurement, options.in_tags);
   char * lmin_ptr = lmin_str;
-  lmin_ptr += sprintf(lmin_ptr, "%s,%s,latency=min ", measurement, tags);
+  lmin_ptr += sprintf(lmin_ptr, "%s,%s,latency=min ", measurement, options.in_tags);
   char * lmax_ptr = lmax_str;
-  lmax_ptr += sprintf(lmax_ptr, "%s,%s,latency=max ", measurement, tags);
+  lmax_ptr += sprintf(lmax_ptr, "%s,%s,latency=max ", measurement, options.in_tags);
 
   //if no latency reported at all, don't try to send it to influx!
   int latency = 0;

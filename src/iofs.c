@@ -54,6 +54,9 @@
 #endif
 #include <sys/file.h> /* flock(2) */
 
+#include <unistd.h>
+#include <limits.h>
+
 //parsing of cli
 #include <setup.h>
 
@@ -706,6 +709,7 @@ static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
     .in_db = arguments.in_db,
     .in_username = arguments.in_username,
     .in_password = arguments.in_password,
+    .in_tags = arguments.in_tags,
     .detailed_logging = 1,
   };
 
@@ -777,12 +781,19 @@ int main(int argc, char *argv[]) {
   if (env_config) {
     sprintf(config_path, "%s", env_config);
   }
+
+  //add hostname to tags
+  char hostname[HOST_NAME_MAX + 1 + 5];
+  gethostname(hostname, HOST_NAME_MAX + 1);
+  sprintf(arguments.in_tags, "host=%s", hostname);
+
   if (read_config(config_path, &arguments)) {
     printf("Could not read config file %s.\n");
   }
 
   argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
+  //add hostname to tags
 
   prefix = arguments.args[1];
 
