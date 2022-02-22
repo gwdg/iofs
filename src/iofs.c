@@ -783,13 +783,20 @@ int main(int argc, char *argv[]) {
 
   argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
-  printf("IOFS-trace version 0.8 %s on %s\n", argv[0], argv[argc-1]);
 
-  umask(0);
   prefix = arguments.args[1];
 
-  argv[1] = arguments.args[0];
+  printf("IOFS-trace version 0.8\nSource path: %s mounted at %s\n", arguments.args[0], prefix);
 
-  int ret = fuse_main(2, argv, &cache_oper, NULL);
+  umask(0);
+
+  char * newargs[4];
+  newargs[0] = argv[0];
+  newargs[1] = arguments.args[0];
+  newargs[2] = "-o";
+  newargs[3] = "allow_other";
+  
+
+  int ret = fuse_main(4, newargs, &cache_oper, NULL);
   return 0;
 }
