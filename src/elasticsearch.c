@@ -101,7 +101,10 @@ monitor_counter_t counter[COUNTER_LAST] = {
 static void curl_to_influx(char * linep) {
   CURLcode res;
   char url[1024];
-  sprintf(url, "%s/write?db=%s", options.in_server, options.in_db);
+  if (options.in_username[0] != '\0')
+    sprintf(url, "%s/write?db=%s&u=%s&p=%s", options.in_server, options.in_db, options.in_username, options.in_password);
+  else
+    sprintf(url, "%s/write?db=%s", options.in_server, options.in_db);
   curl_easy_setopt(monitor.curl, CURLOPT_URL, url);
   curl_easy_setopt(monitor.curl, CURLOPT_POSTFIELDS, linep);
 

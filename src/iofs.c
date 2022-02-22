@@ -704,6 +704,8 @@ static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
     .es_uri = arguments.es_uri,
     .in_server = arguments.in_server,
     .in_db = arguments.in_db,
+    .in_username = arguments.in_username,
+    .in_password = arguments.in_password,
     .detailed_logging = 1,
   };
 

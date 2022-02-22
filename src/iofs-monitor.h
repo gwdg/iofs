@@ -52,6 +52,8 @@ typedef struct {
   char * es_uri;
   char * in_server;
   char * in_db;
+  char * in_username;
+  char * in_password;
   int interval;
 } monitor_options_t;
 
