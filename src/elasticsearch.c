@@ -208,11 +208,11 @@ static void format_influx(char *linep, int lastCounter) {
     ptr += sprintf(ptr, " %d000000000\n", seconds);
   }
 
-  char count_str[1024*1024];
-  char l_str[1024*1024];
-  char lmean_str[1024*1024];
-  char lmin_str[1024*1024];
-  char lmax_str[1024*1024];
+  char count_str[1024];
+  char l_str[1024];
+  char lmean_str[1024];
+  char lmin_str[1024];
+  char lmax_str[1024];
 
   char * count_ptr = count_str;
   count_ptr += sprintf(count_ptr, "%s,%s ", measurement, options.in_tags);
