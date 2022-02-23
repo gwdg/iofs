@@ -124,7 +124,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
         return 1;
       }
       break;
-    case 't':
+    case 't': ;
       //TODO: Do something if this fails
       int ret = append_tags(arguments, arg);
       break;
