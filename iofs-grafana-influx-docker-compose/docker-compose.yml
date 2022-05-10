@@ -1,0 +1,28 @@
+version: "3.8"
+services:
+  influx:
+    image: influxdb
+    container_name: influxc
+    ports:
+      - '8086:8086'
+    volumes:
+      - influxv:/var/lib/influxdb
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${DOCKER_INFLUXDB_INIT_USERNAME}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${DOCKER_INFLUXDB_INIT_PASSWORD}
+      DOCKER_INFLUXDB_INIT_ORG: ${DOCKER_INFLUXDB_INIT_ORG}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${DOCKER_INFLUXDB_INIT_BUCKET}
+  grafana:
+    image: grafana/grafana-oss
+    container_name: grafanac
+    ports:
+      - '3000:3000'
+    volumes:
+      - grafanav:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
+volumes:
+  influxv:
+  grafanav:
