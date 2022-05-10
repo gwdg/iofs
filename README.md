@@ -5,6 +5,18 @@ The IOFS ...
 The code also contains a Grafana reporting submodule that can be easily integrated into any FUSE module.
 You may use the code in iofs-monitor.h and elasticsearch.c to integrate it into your own FUSE module.
 
+# Dependencies
+- `libcurl`
+- `fuse3`
+- `libfuse3-dev`
+
+# Build
+```
+mkdir build && cd build
+cmake ..
+make
+```
+
 # Usage
 
 Please use absolute paths for source and target directories:
