@@ -24,6 +24,10 @@ Please use absolute paths for source and target directories:
 iofs <absolute_path_target> <absolute_path_source>
 ```
 
+# Local Environment
+
+See `./docker-devenv/README.md`.
+
 # Preparation of the Grafana schema
 
 

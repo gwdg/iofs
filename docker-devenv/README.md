@@ -14,6 +14,8 @@
 ```
 If you changed `INFLUX_DB` in `.env`, change `--in-db` accordingly.
 
+Now you can create your first dashboard!
+
 ## Create initial database manually
 1. Start the docker-container (check with `docker container ls` afterwards).
 2. Get a shell into the influxdb container. By default, the container is named `influxc`:
