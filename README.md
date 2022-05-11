@@ -15,6 +15,15 @@ You may use the code in iofs-monitor.h and elasticsearch.c to integrate it into 
 mkdir build && cd build
 cmake ..
 make
+make install
+```
+You can set the install path with
+```
+cmake --install-prefix=/opt/iofs/
+```
+To set the default path for the iofs config file, use
+```
+cmake --DCONFIG_PATH=/opt/iofs/etc/iofs.conf ..
 ```
 
 # Usage
