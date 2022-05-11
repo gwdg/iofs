@@ -7,7 +7,12 @@
 - Fill out the `.env` file
 - Start the `docker-compose`
 - Sadly, `influx:1.x` doesn't initialize a database by default, even though it is defined in via the `.env` file. Thus we have to define our own database. See below.
-- Lastly, we have to define `influxdb` as the data source in grafana. See below.
+- Next, we have to define `influxdb` as the data source in grafana. See below.
+- Lastly, we have to compile `iofs` (see roots `README.md`) and run it via
+```
+./iofs <PATH_TO_WHERE_YOU_WRITE> <PATH_ON_WHAT_YOU_MAP> --in-server=http://localhost:8086 --in-db=mydb
+```
+If you changed `INFLUX_DB` in `.env`, change `--in-db` accordingly.
 
 ## Create initial database manually
 1. Start the docker-container (check with `docker container ls` afterwards).
@@ -42,4 +47,4 @@ SHOW DATABASES;
 
 **InfluxDB Details**: Use the `Database`, `User`, `Password` specified in the `.env`
 
-6. Afterwards test the configuration via `Save & test`. If everything was configured successfully, it should show an alert with `Data source is working`
+6. Afterwards test the configuration via `Save & test`. If everything was configured successfully, it should show an alert with `Data source is working`. If you have the `docker-compose` logs open, you should see a request with a `Grafana/x.x.x` user agent as well.
