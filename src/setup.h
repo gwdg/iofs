@@ -53,8 +53,8 @@ static options_t arguments = {
    Order of fields: {NAME, KEY, ARG, FLAGS, DOC}.
 */
 static struct argp_option arg_options[] = {
-  {"verbosity", 'v', 0, 0, "Produce verbose output"},
-  {"interval", 'i', 0, 0, "output interval"},
+  {"verbosity", 'v', "10", 0, "Produce verbose output"},
+  {"interval", 'i', "1", 0, "output interval in seconds"},
   {"logfile",  'l', "/tmp/iofs.log", 0, "location of logs"},
   {"outfile",  'O', "/tmp/iofs.out", 0, "location of data"},
   {"es-server", ES_SERVER, "http://localhost", 0, "Location of the elasticsearch server"},
