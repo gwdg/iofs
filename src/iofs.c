@@ -806,7 +806,7 @@ int main(int argc, char *argv[]) {
   newargs[1] = arguments.args[0];
   newargs[2] = "-o";
   newargs[3] = "allow_other";
-  
+
 
   int ret = fuse_main(4, newargs, &cache_oper, NULL);
   return 0;

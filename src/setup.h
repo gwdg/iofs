@@ -12,6 +12,7 @@
 #define ES_URI 0x102
 #define IN_SERVER 0x103
 #define IN_DB 0x104
+#define CLASSIFICATION_FILE 0x105
 
 #define BUF_LEN 256
 
@@ -32,6 +33,7 @@ typedef struct options_t
   int verbosity;
   int detailed_logging;
   int interval;
+  char classificationfile[BUF_LEN];
 } options_t;
 
 static int append_tags(options_t *, char *);
@@ -45,7 +47,8 @@ static options_t arguments = {
   .es_server = "",
   .in_server = "",
   .in_username = "",
-  .in_server = ""
+  .in_server = "",
+  .classificationfile = ""
 };
 
 /*
@@ -63,6 +66,7 @@ static struct argp_option arg_options[] = {
   {"in-server", IN_SERVER, "http://localhost:8086", 0, "Location of the influxdb server with port"},
   {"in-db", IN_DB, "moep", 0, "database name"},
   {"in-tags", 't', "cluster=hpc-1", 0, "Custom tags for InfluxDB"},
+  {"classificationfile", CLASSIFICATION_FILE, "/path/to/model.csv", 0, "Expected performance model. See documentation for more."},
   {0}
 };
 
@@ -124,6 +128,12 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
         return 1;
       }
       break;
+    case CLASSIFICATION_FILE:
+      if (snprintf(arguments->classificationfile, BUF_LEN, "%s", arg) > BUF_LEN) {
+        printf("Input argument %s bigger then %d. Aborting", key, BUF_LEN);
+        return 1;
+      }
+      break;
     case 't': ;
       //TODO: Do something if this fails
       int ret = append_tags(arguments, arg);
@@ -168,6 +178,7 @@ static int parse_config(char *buf, options_t *arguments) {
   return 3; // syntax error
 }
 
+// TODO document what tags are (a influx concept)
 static int append_tags(options_t *arguments, char *tags) {
   if (snprintf(
         arguments->in_tags + strlen(arguments->in_tags),
