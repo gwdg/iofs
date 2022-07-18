@@ -158,6 +158,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 
 
 // Parse the buffer for config info. Return an error code or 0 for no error.
+// TODO Check how resistent this is to whitespaces
 static int parse_config(char *buf, options_t *arguments) {
   char dummy[BUF_LEN];
 //  printf(buf);
@@ -175,6 +176,7 @@ static int parse_config(char *buf, options_t *arguments) {
   if (sscanf(buf, " outfile = %s", arguments->outfile) == 1) return 0;
   if (sscanf(buf, " interval = %lu", arguments->interval) == 1) return 0;
   if (sscanf(buf, " verbosity = %lu", arguments->verbosity) == 1) return 0;
+  if (sscanf(buf, " classificationfile = %s", arguments->classificationfile) == 1) return 0;
   return 3; // syntax error
 }
 
