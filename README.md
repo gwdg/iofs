@@ -33,10 +33,17 @@ Please use absolute paths for source and target directories:
 iofs <absolute_path_target> <absolute_path_source>
 ```
 
+# Configuration
+
+All possible configuration settings can be seen via `iofs --help` or in the [example.conf](./example.conf).
+
+Everything except the mount points can be both configured via CLI parameters or config file. Note that the CLI parameters
+have a higher precedence.
+
+There are 2 ways to use a configuration file:
+1. Define the configuration file path at compile time, see above.
+2. Set the `IOFS_CONFIG_PATH` environment variable to the proper path.
+
 # Local Environment
 
 See `./docker-devenv/README.md`.
-
-# Preparation of the Grafana schema
-
-

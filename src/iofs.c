@@ -788,7 +788,7 @@ int main(int argc, char *argv[]) {
   sprintf(arguments.in_tags, "host=%s", hostname);
 
   if (read_config(config_path, &arguments)) {
-    printf("Could not read config file %s.\n", config_path);
+    printf("Could not read config file located at %s.\nSee the documentation on how to set the config variable.", config_path);
   }
 
   argp_parse(&argp, argc, argv, 0, 0, &arguments);
