@@ -8,6 +8,7 @@
 - Start the `docker-compose`
 - Sadly, `influx:1.x` doesn't initialize a database by default, even though it is defined in via the `.env` file. Thus we have to define our own database. See below.
 - Next, we have to define `influxdb` as the data source in grafana. See below.
+- If not done previously, we have to enable `user_allow_other` in the `/etc/fuse.conf`
 - Lastly, we have to compile `iofs` (see roots `README.md`) and run it via
 ```
 ./iofs <PATH_TO_WHERE_YOU_WRITE> <PATH_ON_WHAT_YOU_MAP> --in-server=http://localhost:8086 --in-db=mydb
