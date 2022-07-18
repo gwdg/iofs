@@ -331,11 +331,12 @@ static void* reporting_thread(void * user){
       fflush(monitor.logfile);
     }
 
-    if (! first_iteration)
+    if (! first_iteration) {
       if (options.es_server[0] != '\0')
         submit_to_es(json, (int)(ptr - json));
       if (options.in_server[0] != '\0')
         curl_to_influx(linep);
+    }
 
     first_iteration = 0;
   }
