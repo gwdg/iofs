@@ -1,5 +1,6 @@
 # custom stuff
 build/
+src/notes.md
 
 # Prerequisites
 *.d
