@@ -17,32 +17,16 @@
 
 #include <iofs-monitor.h>
 
-/**
- * @brief 
- * 
- */
 enum hist_type_t{
   HIST_READ,
   HIST_WRITE,
   HIST_LAST
 };
 
-/**
- * @brief 
- * 
- */
 static char * hist_names[HIST_LAST] = {"read", "write"};
 #define HIST_BUCKETS 7
-/**
- * @brief 
- * 
- */
 static int hist_sizes[HIST_BUCKETS - 1] = {4096, 4096*2, 4096*4, 65536, 65536*2, 65536*4};
 
-/**
- * @brief 
- * 
- */
 typedef struct{
   // mutex could be here
   // buffer could be here
@@ -53,19 +37,11 @@ typedef struct{
   float latency_min;
 } monitor_counter_internal_t;
 
-/**
- * @brief 
- * 
- */
 typedef struct{
   // intervals: 4, 8, 16, 32, 64, 128, 256, 1024+
   monitor_counter_internal_t interval[HIST_BUCKETS];
 } monitor_histogram_t;
 
-/**
- * @brief 
- * 
- */
 typedef struct {
   int started;
   pthread_t reporting_thread;
@@ -79,21 +55,9 @@ typedef struct {
   monitor_histogram_t         hist[2][HIST_LAST];
 } monitor_internal_t;
 
-/**
- * @brief 
- * 
- */
 static monitor_options_t options;
-/**
- * @brief 
- * 
- */
 static monitor_internal_t monitor;
 
-/**
- * @brief 
- * 
- */
 monitor_counter_t counter[COUNTER_LAST] = {
   {"MD_get", COUNTER_MD_GET, COUNTER_NONE},
   {"MD_mod", COUNTER_MD_MOD, COUNTER_NONE},
@@ -134,11 +98,6 @@ monitor_counter_t counter[COUNTER_LAST] = {
   {"flock", COUNTER_FLOCK, COUNTER_NONE},
   };
 
-/**
- * @brief 
- * 
- * @param linep 
- */
 static void curl_to_influx(char * linep) {
   CURLcode res;
   char url[1024];
@@ -172,12 +131,6 @@ static void es_send(char* data, int len){
   }
 }
 
-/**
- * @brief 
- * 
- * @param json 
- * @param json_len 
- */
 static void submit_to_es(char * json, int json_len){
   if(! options.es_server ) return;
 
@@ -222,11 +175,6 @@ static void submit_to_es(char * json, int json_len){
   }
 }
 
-/**
- * @brief 
- * 
- * @param p 
- */
 static inline void clean_value(monitor_counter_internal_t * p){
   p->count = 0;
   p->value = 0;
@@ -235,12 +183,6 @@ static inline void clean_value(monitor_counter_internal_t * p){
   p->latency_max = 0;
 }
 
-/**
- * @brief 
- * 
- * @param linep 
- * @param lastCounter 
- */
 static void format_influx(char *linep, int lastCounter) {
   char * ptr = linep;
 
@@ -316,12 +258,6 @@ static void format_influx(char *linep, int lastCounter) {
   }
 }
 
-/**
- * @brief 
- * 
- * @param json 
- * @param lastCounter 
- */
 static void format_json(char * json, int lastCounter) {
   char * ptr = json;
   time_t seconds;
@@ -360,12 +296,6 @@ static void format_json(char * json, int lastCounter) {
 
 }
 
-/**
- * @brief 
- * 
- * @param user 
- * @return void* 
- */
 static void* reporting_thread(void * user){
   char json[1024*1024];
   char *linep = (char*) malloc(1024*1024*sizeof(char));
@@ -415,22 +345,10 @@ static void* reporting_thread(void * user){
   return NULL;
 }
 
-/**
- * @brief 
- * 
- * @param activity 
- */
 void monitor_start_activity(monitor_activity_t* activity){
   activity->t_start = clock();
 }
 
-/**
- * @brief 
- * 
- * @param counter 
- * @param time 
- * @param count 
- */
 static inline void update_counter(monitor_counter_internal_t * counter, double time, uint64_t count){
   // On some machine may be not thread safe and lead to some inaccuracy, we accept this for performance
   counter->count++;
@@ -447,14 +365,6 @@ static inline void update_counter(monitor_counter_internal_t * counter, double t
   }
 }
 
-/**
- * @brief 
- * 
- * @param type 
- * @param ts 
- * @param t 
- * @param size 
- */
 static void inline update_hist(enum hist_type_t type, int ts, double t, uint64_t size){
   int i;
   for(i = 0; i < HIST_BUCKETS - 1; i++){
@@ -465,13 +375,6 @@ static void inline update_hist(enum hist_type_t type, int ts, double t, uint64_t
   update_counter(& monitor.hist[ts][type].interval[i], t, size);
 }
 
-/**
- * @brief 
- * 
- * @param activity 
- * @param counter 
- * @param count 
- */
 void monitor_end_activity(monitor_activity_t* activity, monitor_counter_t * counter, uint64_t count){
   clock_t t_end;
   t_end = clock();
@@ -490,11 +393,6 @@ void monitor_end_activity(monitor_activity_t* activity, monitor_counter_t * coun
   }
 }
 
-/**
- * @brief 
- * 
- * @param o 
- */
 void monitor_init(monitor_options_t * o){
   memcpy(& options, o, sizeof(options));
   memset(& monitor, 0, sizeof(monitor));
@@ -522,10 +420,6 @@ void monitor_init(monitor_options_t * o){
   }
 }
 
-/**
- * @brief 
- * 
- */
 void monitor_finalize(){
   monitor.started = 0;
   if(pthread_join(monitor.reporting_thread, NULL)) {

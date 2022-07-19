@@ -23,10 +23,6 @@ const char *argp_program_version = "iofs 0.8";
 const char *argp_program_bug_address = "<hpc-support@gwdg.de>";
 
 /* This structure is used by main to communicate with parse_opt. */
-/**
- * @brief 
- * 
- */
 typedef struct options_t
 {
   char *args[2];            /* ARG1 and ARG2 */
@@ -42,10 +38,6 @@ typedef struct options_t
 
 static int append_tags(options_t *, char *);
 
-/**
- * @brief 
- * 
- */
 static options_t arguments = {
   .outfile = "/tmp/iofs.out",
   .logfile = "/tmp/iofs.log",
@@ -84,14 +76,6 @@ static char doc[] =
 "IOFS -- The I/O file system - A FUSE file system developed for I/O monitoring";
 static struct argp argp = {arg_options, parse_opt, args_doc, doc};
 
-/**
- * @brief 
- * 
- * @param key 
- * @param arg 
- * @param state 
- * @return error_t 
- */
 static error_t parse_opt (int key, char *arg, struct argp_state *state) {
   options_t *arguments = state->input;
 
@@ -176,13 +160,6 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 
 // Parse the buffer for config info. Return an error code or 0 for no error.
 // TODO Check how resistent this is to whitespaces
-/**
- * @brief 
- * 
- * @param buf 
- * @param arguments 
- * @return int 
- */
 static int parse_config(char *buf, options_t *arguments) {
   char dummy[BUF_LEN];
 //  printf(buf);
@@ -205,13 +182,6 @@ static int parse_config(char *buf, options_t *arguments) {
 }
 
 // TODO document what tags are (a influx concept)
-/**
- * @brief 
- * 
- * @param arguments 
- * @param tags 
- * @return int 
- */
 static int append_tags(options_t *arguments, char *tags) {
   if (snprintf(
         arguments->in_tags + strlen(arguments->in_tags),
@@ -223,13 +193,6 @@ static int append_tags(options_t *arguments, char *tags) {
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param config_path 
- * @param arguments 
- * @return int 
- */
 int read_config (char * config_path, options_t *arguments) {
   FILE *f = fopen(config_path, "r");
   if (! f) return 1;

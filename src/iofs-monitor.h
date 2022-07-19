@@ -1,10 +1,6 @@
 #include <stdint.h>
 #include <time.h>
 
-/**
- * @brief 
- * 
- */
 enum counter_type_t{
   COUNTER_MD_GET,
   COUNTER_MD_MOD,
@@ -46,10 +42,6 @@ enum counter_type_t{
   COUNTER_NONE
 };
 
-/**
- * @brief 
- * 
- */
 typedef struct {
   char * logfile;
   char * outfile;
@@ -66,10 +58,6 @@ typedef struct {
   int interval;
 } monitor_options_t;
 
-/**
- * @brief 
- * 
- */
 struct monitor_counter_t{
   char const * name;
   enum counter_type_t type;
@@ -78,16 +66,8 @@ struct monitor_counter_t{
 
 
 typedef struct monitor_counter_t monitor_counter_t;
-/**
- * @brief 
- * 
- */
 extern monitor_counter_t counter[];
 
-/**
- * @brief 
- * 
- */
 struct monitor_activity_t{
   clock_t t_start;
 };
@@ -96,10 +76,7 @@ typedef struct monitor_activity_t monitor_activity_t;
 
 // CONTIANED IN elasticsearch.c
 void monitor_init(monitor_options_t * options);
-// CONTIANED IN elasticsearch.c
 void monitor_finalize();
 
-// CONTIANED IN elasticsearch.c
 void monitor_start_activity(monitor_activity_t* activity);
-// CONTIANED IN elasticsearch.c
 void monitor_end_activity(monitor_activity_t* activity, monitor_counter_t * counter, uint64_t value);

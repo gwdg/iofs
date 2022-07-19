@@ -63,43 +63,17 @@
 
 #include <iofs-monitor.h>
 
-/**
- * @brief 
- * 
- */
 #define START_TIMER() monitor_activity_t activity;  monitor_start_activity(& activity)
-/**
- * @brief 
- * 
- */
 #define END_TIMER(name, count) monitor_end_activity(& activity, & counter[COUNTER_ ## name], count)
 
-/**
- * @brief 
- * 
- */
 static char * prefix;
 typedef char name_buffer[PATH_MAX];
 
-/**
- * @brief 
- * 
- * @param path 
- * @param out 
- */
 static void prepare_path(const char * path, char * out){
   //	debug("%s\n", __PRETTY_FUNCTION__);
   snprintf(out, PATH_MAX, "%s/%s", prefix, path);
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param stbuf 
- * @param fi 
- * @return int 
- */
 static int cache_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi)
 {
   START_TIMER();
@@ -115,13 +89,6 @@ static int cache_getattr(const char *path, struct stat *stbuf, struct fuse_file_
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param mask 
- * @return int 
- */
 static int cache_access(const char *path, int mask)
 {
   START_TIMER();
@@ -138,14 +105,6 @@ static int cache_access(const char *path, int mask)
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param buf 
- * @param size 
- * @return int 
- */
 static int cache_readlink(const char *path, char *buf, size_t size)
 {
   START_TIMER();
@@ -163,23 +122,12 @@ static int cache_readlink(const char *path, char *buf, size_t size)
   return 0;
 }
 
-/**
- * @brief 
- * 
- */
 struct cache_dirp {
   DIR *dp;
   struct dirent *entry;
   off_t offset;
 };
 
-/**
- * @brief 
- * 
- * @param path 
- * @param fi 
- * @return int 
- */
 static int cache_opendir(const char *path, struct fuse_file_info *fi)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -206,29 +154,12 @@ static int cache_opendir(const char *path, struct fuse_file_info *fi)
   return 0;
 }
 
-/**
- * @brief Get the dirp object
- * 
- * @param fi 
- * @return struct cache_dirp* 
- */
 static inline struct cache_dirp *get_dirp(struct fuse_file_info *fi)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
   return (struct cache_dirp *) (uintptr_t) fi->fh;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param buf 
- * @param filler 
- * @param offset 
- * @param fi 
- * @param flags 
- * @return int 
- */
 static int cache_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     off_t offset, struct fuse_file_info *fi, enum fuse_readdir_flags flags)
 {
@@ -278,13 +209,6 @@ static int cache_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param fi 
- * @return int 
- */
 static int cache_releasedir(const char *path, struct fuse_file_info *fi)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -297,13 +221,6 @@ static int cache_releasedir(const char *path, struct fuse_file_info *fi)
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param mode 
- * @return int 
- */
 static int cache_mkdir(const char *path, mode_t mode)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -320,12 +237,6 @@ static int cache_mkdir(const char *path, mode_t mode)
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @return int 
- */
 static int cache_unlink(const char *path)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -342,12 +253,6 @@ static int cache_unlink(const char *path)
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @return int 
- */
 static int cache_rmdir(const char *path)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -364,13 +269,6 @@ static int cache_rmdir(const char *path)
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param from 
- * @param to 
- * @return int 
- */
 static int cache_symlink(const char *from, const char *to)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -389,14 +287,6 @@ static int cache_symlink(const char *from, const char *to)
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param from 
- * @param to 
- * @param flags 
- * @return int 
- */
 static int cache_rename(const char *from, const char *to, unsigned int flags)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -419,13 +309,6 @@ static int cache_rename(const char *from, const char *to, unsigned int flags)
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param from 
- * @param to 
- * @return int 
- */
 static int cache_link(const char *from, const char *to)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -444,14 +327,6 @@ static int cache_link(const char *from, const char *to)
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param mode 
- * @param fi 
- * @return int 
- */
 static int cache_chmod(const char *path, mode_t mode, struct fuse_file_info *fi)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -468,15 +343,6 @@ static int cache_chmod(const char *path, mode_t mode, struct fuse_file_info *fi)
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param uid 
- * @param gid 
- * @param fi 
- * @return int 
- */
 static int cache_chown(const char *path, uid_t uid, gid_t gid, struct fuse_file_info *fi)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -493,14 +359,6 @@ static int cache_chown(const char *path, uid_t uid, gid_t gid, struct fuse_file_
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param size 
- * @param fi 
- * @return int 
- */
 static int cache_truncate(const char *path, off_t size, struct fuse_file_info *fi)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -519,14 +377,6 @@ static int cache_truncate(const char *path, off_t size, struct fuse_file_info *f
 
 
 #ifdef HAVE_UTIMENSAT
-/**
- * @brief 
- * 
- * @param path 
- * @param ts 
- * @param fi 
- * @return int 
- */
 static int cache_utimens(const char *path, const struct timespec ts[2], struct fuse_file_info *fi){
   debug("%s\n", __PRETTY_FUNCTION__);
   int res;
@@ -544,14 +394,6 @@ static int cache_utimens(const char *path, const struct timespec ts[2], struct f
 }
 #endif
 
-/**
- * @brief 
- * 
- * @param path 
- * @param mode 
- * @param fi 
- * @return int 
- */
 static int cache_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -569,13 +411,6 @@ static int cache_create(const char *path, mode_t mode, struct fuse_file_info *fi
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param fi 
- * @return int 
- */
 static int cache_open(const char *path, struct fuse_file_info *fi)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -593,16 +428,6 @@ static int cache_open(const char *path, struct fuse_file_info *fi)
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param buf 
- * @param size 
- * @param offset 
- * @param fi 
- * @return int 
- */
 static int cache_read(const char *path, char *buf, size_t size, off_t offset,
     struct fuse_file_info *fi)
 {
@@ -619,16 +444,6 @@ static int cache_read(const char *path, char *buf, size_t size, off_t offset,
   return res;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param bufp 
- * @param size 
- * @param offset 
- * @param fi 
- * @return int 
- */
 static int cache_read_buf(const char *path, struct fuse_bufvec **bufp, size_t size, off_t offset, struct fuse_file_info *fi)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -653,16 +468,6 @@ static int cache_read_buf(const char *path, struct fuse_bufvec **bufp, size_t si
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param buf 
- * @param size 
- * @param offset 
- * @param fi 
- * @return int 
- */
 static int cache_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -678,15 +483,6 @@ static int cache_write(const char *path, const char *buf, size_t size, off_t off
   return res;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param buf 
- * @param offset 
- * @param fi 
- * @return int 
- */
 static int cache_write_buf(const char *path, struct fuse_bufvec *buf, off_t offset, struct fuse_file_info *fi)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -705,13 +501,6 @@ static int cache_write_buf(const char *path, struct fuse_bufvec *buf, off_t offs
   return ret;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param stbuf 
- * @return int 
- */
 static int cache_statfs(const char *path, struct statvfs *stbuf)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -726,13 +515,6 @@ static int cache_statfs(const char *path, struct statvfs *stbuf)
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param fi 
- * @return int 
- */
 static int cache_flush(const char *path, struct fuse_file_info *fi)
 {
   int res;
@@ -752,13 +534,6 @@ static int cache_flush(const char *path, struct fuse_file_info *fi)
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param fi 
- * @return int 
- */
 static int cache_release(const char *path, struct fuse_file_info *fi)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -769,14 +544,6 @@ static int cache_release(const char *path, struct fuse_file_info *fi)
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param isdatasync 
- * @param fi 
- * @return int 
- */
 static int cache_fsync(const char *path, int isdatasync,
     struct fuse_file_info *fi)
 {
@@ -800,16 +567,6 @@ static int cache_fsync(const char *path, int isdatasync,
 }
 
 #ifdef HAVE_POSIX_FALLOCATE
-/**
- * @brief 
- * 
- * @param path 
- * @param mode 
- * @param offset 
- * @param length 
- * @param fi 
- * @return int 
- */
 static int cache_fallocate(const char *path, int mode,
     off_t offset, off_t length, struct fuse_file_info *fi)
 {
@@ -828,16 +585,6 @@ static int cache_fallocate(const char *path, int mode,
 
 #ifdef HAVE_SETXATTR
 /* xattr operations are optional and can safely be left unimplemented */
-/**
- * @brief 
- * 
- * @param path 
- * @param name 
- * @param value 
- * @param size 
- * @param flags 
- * @return int 
- */
 static int cache_setxattr(const char *path, const char *name, const char *value,
     size_t size, int flags)
 {
@@ -853,15 +600,6 @@ static int cache_setxattr(const char *path, const char *name, const char *value,
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param name 
- * @param value 
- * @param size 
- * @return int 
- */
 static int cache_getxattr(const char *path, const char *name, char *value,
     size_t size)
 {
@@ -877,14 +615,6 @@ static int cache_getxattr(const char *path, const char *name, char *value,
   return res;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param list 
- * @param size 
- * @return int 
- */
 static int cache_listxattr(const char *path, char *list, size_t size)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -899,13 +629,6 @@ static int cache_listxattr(const char *path, char *list, size_t size)
   return res;
 }
 
-/**
- * @brief 
- * 
- * @param path 
- * @param name 
- * @return int 
- */
 static int cache_removexattr(const char *path, const char *name)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -922,15 +645,6 @@ static int cache_removexattr(const char *path, const char *name)
 #endif /* HAVE_SETXATTR */
 
 #ifdef HAVE_LIBULOCKMGR
-/**
- * @brief 
- * 
- * @param path 
- * @param fi 
- * @param cmd 
- * @param lock 
- * @return int 
- */
 static int cache_lock(const char *path, struct fuse_file_info *fi, int cmd,
     struct flock *lock)
 {
@@ -944,14 +658,6 @@ static int cache_lock(const char *path, struct fuse_file_info *fi, int cmd,
 }
 #endif
 
-/**
- * @brief 
- * 
- * @param path 
- * @param fi 
- * @param op 
- * @return int 
- */
 static int cache_flock(const char *path, struct fuse_file_info *fi, int op)
 {
   debug("%s\n", __PRETTY_FUNCTION__);
@@ -965,13 +671,6 @@ static int cache_flock(const char *path, struct fuse_file_info *fi, int op)
   return 0;
 }
 
-/**
- * @brief 
- * 
- * @param conn 
- * @param cfg 
- * @return void* 
- */
 static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
 
   // see documentation of options in fuse.h
@@ -1018,19 +717,10 @@ static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
   return NULL;
 }
 
-/**
- * @brief 
- * 
- * @param private_data 
- */
 static void cache_destroy (void *private_data){
   monitor_finalize();
 }
 
-/**
- * @brief 
- * 
- */
 static struct fuse_operations cache_oper = {
   .getattr	= cache_getattr,
   .access		= cache_access,
@@ -1080,13 +770,6 @@ static struct fuse_operations cache_oper = {
 };
 
 
-/**
- * @brief 
- * 
- * @param argc 
- * @param argv 
- * @return int 
- */
 int main(int argc, char *argv[]) {
 
   char config_path[BUF_LEN] = "/etc/iofs.conf";
