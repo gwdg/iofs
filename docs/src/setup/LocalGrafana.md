@@ -36,14 +36,14 @@ SHOW DATABASES;
 
 ## Add the (already initialized) influxdb to grafana
 1. Start the docker-container (check with `docker container ls` afterwards).
-2. Connect to grafana via http://localhost:3000/
+2. Connect to grafana via <http://localhost:3000/>
 3. Login with the credentials set in `.env` (`grafana`:`grafana` is default)
 4. Go to `Configuration->Data Sources->Add Data Source->InfluxDB`
 5. Add the following configuration:
 
 **Query Language**: Since we explicitly use `influxdb` version 1, we have to use InfluxQL.
 
-**URL**: Since we use docker compose (instead of the default network bridge) container name DNS is enabled. Thus we can use `http://influxc:8086`.
+**URL**: Since we use docker compose (instead of the default network bridge) container name DNS is enabled. Thus we can use <http://influxc:8086>.
 
 **InfluxDB Details**: Use the `Database`, `User`, `Password` specified in the `.env`
 

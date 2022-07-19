@@ -8,7 +8,6 @@
   - [Local Grafana Setup with Docker](./setup/LocalGrafana.md)
 - [How does it work?](./internal/README.md)
   - [Workflows](./internal/Workflows.md)
-  - [Operation Mapping](./internal/MappedOperations.md)
   - [Classification](./internal/Classification.md)
 - [How to extend it](./extending/README.md)
   - [Add new metric](./extending/Metric.md)

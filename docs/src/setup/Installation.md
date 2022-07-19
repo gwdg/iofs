@@ -10,6 +10,8 @@ The following dependencies are required:
 
 ## Build Process
 
+The build process is pretty straight forward
+
 ```
 mkdir build && cd build
 cmake ..
