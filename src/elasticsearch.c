@@ -327,15 +327,17 @@ static void* reporting_thread(void * user){
       fflush(monitor.outfile);
     }
 
+    // TODO what gets printed there from where
     if (options.verbosity > 5){
       fflush(monitor.logfile);
     }
 
-    if (! first_iteration)
+    if (! first_iteration) {
       if (options.es_server[0] != '\0')
         submit_to_es(json, (int)(ptr - json));
       if (options.in_server[0] != '\0')
         curl_to_influx(linep);
+    }
 
     first_iteration = 0;
   }
@@ -346,7 +348,6 @@ static void* reporting_thread(void * user){
 void monitor_start_activity(monitor_activity_t* activity){
   activity->t_start = clock();
 }
-
 
 static inline void update_counter(monitor_counter_internal_t * counter, double time, uint64_t count){
   // On some machine may be not thread safe and lead to some inaccuracy, we accept this for performance
@@ -373,7 +374,6 @@ static void inline update_hist(enum hist_type_t type, int ts, double t, uint64_t
   }
   update_counter(& monitor.hist[ts][type].interval[i], t, size);
 }
-
 
 void monitor_end_activity(monitor_activity_t* activity, monitor_counter_t * counter, uint64_t count){
   clock_t t_end;

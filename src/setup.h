@@ -12,6 +12,7 @@
 #define ES_URI 0x102
 #define IN_SERVER 0x103
 #define IN_DB 0x104
+#define CLASSIFICATION_FILE 0x105
 
 #define BUF_LEN 256
 
@@ -32,6 +33,7 @@ typedef struct options_t
   int verbosity;
   int detailed_logging;
   int interval;
+  char classificationfile[BUF_LEN];
 } options_t;
 
 static int append_tags(options_t *, char *);
@@ -45,7 +47,8 @@ static options_t arguments = {
   .es_server = "",
   .in_server = "",
   .in_username = "",
-  .in_server = ""
+  .in_server = "",
+  .classificationfile = ""
 };
 
 /*
@@ -63,6 +66,7 @@ static struct argp_option arg_options[] = {
   {"in-server", IN_SERVER, "http://localhost:8086", 0, "Location of the influxdb server with port"},
   {"in-db", IN_DB, "moep", 0, "database name"},
   {"in-tags", 't', "cluster=hpc-1", 0, "Custom tags for InfluxDB"},
+  {"classificationfile", CLASSIFICATION_FILE, "/path/to/model.csv", 0, "Expected performance model. See documentation for more."},
   {0}
 };
 
@@ -71,6 +75,7 @@ static char args_doc[] = "fuse-mountpont source-directory";
 static char doc[] =
 "IOFS -- The I/O file system - A FUSE file system developed for I/O monitoring";
 static struct argp argp = {arg_options, parse_opt, args_doc, doc};
+
 static error_t parse_opt (int key, char *arg, struct argp_state *state) {
   options_t *arguments = state->input;
 
@@ -124,6 +129,12 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
         return 1;
       }
       break;
+    case CLASSIFICATION_FILE:
+      if (snprintf(arguments->classificationfile, BUF_LEN, "%s", arg) > BUF_LEN) {
+        printf("Input argument %s bigger then %d. Aborting", key, BUF_LEN);
+        return 1;
+      }
+      break;
     case 't': ;
       //TODO: Do something if this fails
       int ret = append_tags(arguments, arg);
@@ -148,6 +159,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 
 
 // Parse the buffer for config info. Return an error code or 0 for no error.
+// TODO Check how resistent this is to whitespaces
 static int parse_config(char *buf, options_t *arguments) {
   char dummy[BUF_LEN];
 //  printf(buf);
@@ -165,9 +177,11 @@ static int parse_config(char *buf, options_t *arguments) {
   if (sscanf(buf, " outfile = %s", arguments->outfile) == 1) return 0;
   if (sscanf(buf, " interval = %lu", arguments->interval) == 1) return 0;
   if (sscanf(buf, " verbosity = %lu", arguments->verbosity) == 1) return 0;
+  if (sscanf(buf, " classificationfile = %s", arguments->classificationfile) == 1) return 0;
   return 3; // syntax error
 }
 
+// TODO document what tags are (a influx concept)
 static int append_tags(options_t *arguments, char *tags) {
   if (snprintf(
         arguments->in_tags + strlen(arguments->in_tags),
@@ -178,7 +192,6 @@ static int append_tags(options_t *arguments, char *tags) {
   }
   return 0;
 }
-
 
 int read_config (char * config_path, options_t *arguments) {
   FILE *f = fopen(config_path, "r");

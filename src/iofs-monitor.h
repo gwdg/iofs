@@ -1,6 +1,17 @@
 #include <stdint.h>
 #include <time.h>
 
+// TODO: MOVE ME
+/* All classifications are either constant or linear polynomials */
+typedef struct monitor_classification_t {
+  double slope;
+  double y_intercept;
+  // NULL == 0 is never a valid bound, because we can't have negative access sizes.
+  // Thus y = 0 <=> [x,y] = [x, \inf)
+  double left_bound;
+  double right_bound;
+} monitor_classification_t;
+
 enum counter_type_t{
   COUNTER_MD_GET,
   COUNTER_MD_MOD,
@@ -56,6 +67,7 @@ typedef struct {
   char * in_password;
   char * in_tags;
   int interval;
+  monitor_classification_t *classifications;
 } monitor_options_t;
 
 struct monitor_counter_t{
@@ -74,11 +86,9 @@ struct monitor_activity_t{
 
 typedef struct monitor_activity_t monitor_activity_t;
 
+// CONTIANED IN elasticsearch.c
 void monitor_init(monitor_options_t * options);
 void monitor_finalize();
 
-/**
- *
- */
 void monitor_start_activity(monitor_activity_t* activity);
 void monitor_end_activity(monitor_activity_t* activity, monitor_counter_t * counter, uint64_t value);
