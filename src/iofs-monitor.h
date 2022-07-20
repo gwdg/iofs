@@ -1,6 +1,17 @@
 #include <stdint.h>
 #include <time.h>
 
+// TODO: MOVE ME
+/* All classifications are either constant or linear polynomials */
+typedef struct monitor_classification_t {
+  double slope;
+  double y_intercept;
+  // NULL == 0 is never a valid bound, because we can't have negative access sizes.
+  // Thus y = 0 <=> [x,y] = [x, \inf)
+  double left_bound;
+  double right_bound;
+} monitor_classification_t;
+
 enum counter_type_t{
   COUNTER_MD_GET,
   COUNTER_MD_MOD,
@@ -56,6 +67,7 @@ typedef struct {
   char * in_password;
   char * in_tags;
   int interval;
+  monitor_classification_t *classifications;
 } monitor_options_t;
 
 struct monitor_counter_t{

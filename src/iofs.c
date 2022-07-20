@@ -6,7 +6,6 @@
    Copyright (C) 2001-2007  Miklos Szeredi <miklos@szeredi.hu>
    Copyright (C) 2011       Sebastian Pipping <sebastian@pipping.org>
    Copyright (C) 2016       Julian Kunkel <kunkel@dkrz.de>
-   Copyright (C) 2022       Lars Quentin <lars.quentin@gwdg.de>
 
    This program can be distributed under the terms of the GNU GPL.
    See the file COPYING.
@@ -770,6 +769,76 @@ static struct fuse_operations cache_oper = {
 };
 
 
+// TODO move me as well
+// 2 should suffice, but just in case somebody tries their own stuff
+// Linked lists would be overengineering
+#define MAX_CLASSIFICATIONS 256
+monitor_classification_t *classifications[MAX_CLASSIFICATIONS+1] = {NULL};
+
+static void init_default_classifications() {
+  // One should suffice to have some overhead
+  classifications[0] = malloc(sizeof(monitor_classification_t));
+  classifications[0]->slope = 0;
+  classifications[0]->y_intercept = 0;
+  classifications[0]->left_bound = 0;
+  classifications[0]->right_bound = 0;
+}
+
+int try_parse_classification(char *buf, monitor_classification_t *out) {
+  double slope, y_intercept, left_bound, right_bound;
+  int ret = sscanf(buf, "%lf,%lf,%lf,%lf\n", &slope, &y_intercept, &left_bound, &right_bound);
+  // We obviously want 4 parsed values
+  if (ret != 4) {
+    // failed
+    return 1;
+  }
+
+  out = malloc(sizeof(monitor_classification_t));
+  out->slope = slope;
+  out->y_intercept = y_intercept;
+  out->left_bound = left_bound;
+  out->right_bound = right_bound;
+  return 0;
+}
+
+
+// TODO MOVE ME
+static void init_classifications(options_t *arguments) {
+  // File provided?
+  if (arguments->classificationfile[0] == '\0') {
+    init_default_classifications();
+    return;
+  }
+
+  FILE *fp = fopen(arguments->classificationfile, "rr");
+  if (!fp) {
+    // TODO better logging
+    fprintf(stderr, "WARN: COULD NOT OPEN \"%s\"\n", arguments->classificationfile);
+    init_default_classifications();
+    return;
+  }
+
+  char buf[BUF_LEN];
+  int i=0;
+  // Assumption: First line is always the human readable column description
+  // SO WE SKIP IT
+  fgets(buf, sizeof(buf), fp);
+  while (fgets(buf, sizeof(buf), fp)) {
+    // 0 == success
+    if (!try_parse_classification(buf, classifications[i])) i++;
+  }
+
+  printf("Valid classifications: %d\n", i);
+  if (classifications == NULL) {
+    init_default_classifications();
+  }
+
+  // If we didn't have a single valid classification, we will up to have same overhead
+
+  fclose(fp);
+}
+
+
 int main(int argc, char *argv[]) {
 
   char config_path[BUF_LEN] = "/etc/iofs.conf";
@@ -788,7 +857,7 @@ int main(int argc, char *argv[]) {
   sprintf(arguments.in_tags, "host=%s", hostname);
 
   if (read_config(config_path, &arguments)) {
-    printf("Could not read config file located at %s.\nSee the documentation on how to set the config variable.", config_path);
+    printf("Could not read config file located at %s.\nSee the documentation on how to set the config variable.\n", config_path);
   }
 
   argp_parse(&argp, argc, argv, 0, 0, &arguments);
@@ -796,8 +865,7 @@ int main(int argc, char *argv[]) {
   // Load and parse classification if exists
   // otherwise create default lookup structure to keep the overhead the same
   // If the overhead is not the same, one can't create an initial model...
-
-
+  init_classifications(&arguments);
 
   //add hostname to tags
   prefix = arguments.args[1];
