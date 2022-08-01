@@ -770,9 +770,28 @@ static struct fuse_operations cache_oper = {
 
 
 // TODO move me as well
+static struct {
+  classification_type_t key;
+  char *val
+} classification_lookup[] = {
+  {RANDOM_UNCACHED, "RandomUncached"},
+  {SAME_OFFSET, "SameOffset"}
+};
+
+int str_to_classification_type(const char *s, classification_type_t *out) {
+  for (int i=0; i < sizeof(classification_lookup) / sizeof(classification_lookup[0]); ++i) {
+    if (!strcmp(s, classification_lookup[i].val)) {
+      // Found it!
+      *out = classification_lookup[i].key;
+      return 1;
+    }
+  }
+  // unparsable...
+  return 0;
+}
 // 2 should suffice, but just in case somebody tries their own stuff
 // Linked lists would be overengineering
-#define MAX_CLASSIFICATIONS 256
+#define MAX_CLASSIFICATIONS 64
 monitor_classification_t *classifications[MAX_CLASSIFICATIONS+1] = {NULL};
 
 static void init_default_classifications() {
@@ -785,19 +804,48 @@ static void init_default_classifications() {
 }
 
 int try_parse_classification(char *buf, monitor_classification_t *out) {
+  char benchmark_type_str[128];
+  int is_read_op;
   double slope, y_intercept, left_bound, right_bound;
-  int ret = sscanf(buf, "%lf,%lf,%lf,%lf\n", &slope, &y_intercept, &left_bound, &right_bound);
-  // We obviously want 4 parsed values
-  if (ret != 4) {
-    // failed
+  int ret = sscanf(buf, "%[^,],%d,%lf,%lf,%lf,%lf",
+    benchmark_type_str,
+    &is_read_op,
+    &slope,
+    &y_intercept,
+    &left_bound,
+    &right_bound
+  );
+  printf("DEBUG sscanf: %d\n", ret);
+  if (ret != 6) {
+    // couldn't parse all elements
+    // TODO log
+    return 1;
+  }
+
+  classification_type_t benchmark_type;
+  if (!str_to_classification_type(benchmark_type_str, &benchmark_type)) {
+    // TODO log
+    printf("Couldn't parse \"%s\"\n", benchmark_type_str);
     return 1;
   }
 
   out = malloc(sizeof(monitor_classification_t));
+  out->benchmark_type = benchmark_type;
+  out->is_read_op = is_read_op;
   out->slope = slope;
   out->y_intercept = y_intercept;
   out->left_bound = left_bound;
   out->right_bound = right_bound;
+
+  printf("%s | %d | %lf | %lf | %lf | %lf\n",
+      out->benchmark_type ? "Same Offset" : "Random Uncached",
+      out->is_read_op,
+      out->slope,
+      out->y_intercept,
+      out->left_bound,
+      out->right_bound
+  );
+
   return 0;
 }
 
@@ -810,7 +858,7 @@ static void init_classifications(options_t *arguments) {
     return;
   }
 
-  FILE *fp = fopen(arguments->classificationfile, "rr");
+  FILE *fp = fopen(arguments->classificationfile, "r");
   if (!fp) {
     // TODO better logging
     fprintf(stderr, "WARN: COULD NOT OPEN \"%s\"\n", arguments->classificationfile);
@@ -857,7 +905,7 @@ int main(int argc, char *argv[]) {
   sprintf(arguments.in_tags, "host=%s", hostname);
 
   if (read_config(config_path, &arguments)) {
-    printf("Could not read config file located at %s.\nSee the documentation on how to set the config variable.\n", config_path);
+    printf("Could not read config file located at %s. See the documentation on how to set the config variable.\n", config_path);
   }
 
   argp_parse(&argp, argc, argv, 0, 0, &arguments);

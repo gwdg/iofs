@@ -1,9 +1,16 @@
 #include <stdint.h>
+#include <string.h>
 #include <time.h>
 
 // TODO: MOVE ME
+typedef enum classification_type_t {
+  RANDOM_UNCACHED = 0,
+  SAME_OFFSET = 1,
+} classification_type_t;
 /* All classifications are either constant or linear polynomials */
 typedef struct monitor_classification_t {
+  classification_type_t benchmark_type;
+  int is_read_op;
   double slope;
   double y_intercept;
   // NULL == 0 is never a valid bound, because we can't have negative access sizes.
