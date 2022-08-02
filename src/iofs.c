@@ -670,6 +670,10 @@ static int cache_flock(const char *path, struct fuse_file_info *fi, int op)
   return 0;
 }
 
+// TODO Move
+#define MAX_CLASSIFICATIONS 64
+classification_t *classifications[MAX_CLASSIFICATIONS+1] = {NULL};
+
 static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
 
   // see documentation of options in fuse.h
@@ -710,6 +714,7 @@ static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
     .in_password = arguments.in_password,
     .in_tags = arguments.in_tags,
     .detailed_logging = 1,
+    .classifications = classifications
   };
 
   monitor_init(& options);
@@ -774,8 +779,8 @@ static struct {
   classification_type_t key;
   char *val
 } classification_lookup[] = {
-  {RANDOM_UNCACHED, "RandomUncached"},
-  {SAME_OFFSET, "SameOffset"}
+  {CLASSIFICATION_RANDOM_UNCACHED, "RandomUncached"},
+  {CLASSIFICATION_SAME_OFFSET, "SameOffset"}
 };
 
 int str_to_classification_type(const char *s, classification_type_t *out) {
@@ -789,12 +794,8 @@ int str_to_classification_type(const char *s, classification_type_t *out) {
   // unparsable...
   return 0;
 }
-// 2 should suffice, but just in case somebody tries their own stuff
-// Linked lists would be overengineering
-#define MAX_CLASSIFICATIONS 64
-monitor_classification_t *classifications[MAX_CLASSIFICATIONS+1] = {NULL};
 
-int try_parse_classification(char *buf, monitor_classification_t *out) {
+int try_parse_classification(char *buf, classification_t **out) {
   char benchmark_type_str[128];
   int is_read_op;
   double slope, y_intercept, left_bound, right_bound;
@@ -806,7 +807,6 @@ int try_parse_classification(char *buf, monitor_classification_t *out) {
     &left_bound,
     &right_bound
   );
-  printf("DEBUG sscanf: %d\n", ret);
   if (ret != 6) {
     // couldn't parse all elements
     // TODO log
@@ -820,22 +820,13 @@ int try_parse_classification(char *buf, monitor_classification_t *out) {
     return 1;
   }
 
-  out = malloc(sizeof(monitor_classification_t));
-  out->benchmark_type = benchmark_type;
-  out->is_read_op = is_read_op;
-  out->slope = slope;
-  out->y_intercept = y_intercept;
-  out->left_bound = left_bound;
-  out->right_bound = right_bound;
-
-  printf("%s | %d | %lf | %lf | %lf | %lf\n",
-      out->benchmark_type ? "Same Offset" : "Random Uncached",
-      out->is_read_op,
-      out->slope,
-      out->y_intercept,
-      out->left_bound,
-      out->right_bound
-  );
+  *out = malloc(sizeof(classification_t));
+  (*out)->benchmark_type = benchmark_type;
+  (*out)->is_read_op = is_read_op;
+  (*out)->slope = slope;
+  (*out)->y_intercept = y_intercept;
+  (*out)->left_bound = left_bound;
+  (*out)->right_bound = right_bound;
 
   return 0;
 }
@@ -845,7 +836,6 @@ int try_parse_classification(char *buf, monitor_classification_t *out) {
 static void init_classifications(options_t *arguments) {
   // File provided?
   if (arguments->classificationfile[0] == '\0') {
-    init_default_classifications();
     return;
   }
 
@@ -853,7 +843,6 @@ static void init_classifications(options_t *arguments) {
   if (!fp) {
     // TODO better logging
     fprintf(stderr, "WARN: COULD NOT OPEN \"%s\"\n", arguments->classificationfile);
-    init_default_classifications();
     return;
   }
 
@@ -864,15 +853,13 @@ static void init_classifications(options_t *arguments) {
   fgets(buf, sizeof(buf), fp);
   while (fgets(buf, sizeof(buf), fp)) {
     // 0 == success
-    if (!try_parse_classification(buf, classifications[i])) i++;
+    if (!try_parse_classification(buf, &(classifications[i]))) {
+      i++;
+    }
+
   }
 
   printf("Valid classifications: %d\n", i);
-  if (classifications == NULL) {
-    init_default_classifications();
-  }
-
-  // If we didn't have a single valid classification, we will up to have same overhead
 
   fclose(fp);
 }

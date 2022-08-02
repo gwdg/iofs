@@ -10,7 +10,7 @@ typedef enum classification_type_t {
   CLASSIFICATION_LAST
 } classification_type_t;
 /* All classifications are either constant or linear polynomials */
-typedef struct monitor_classification_t {
+typedef struct classification_t {
   classification_type_t benchmark_type;
   int is_read_op;
   double slope;
@@ -19,7 +19,7 @@ typedef struct monitor_classification_t {
   // Thus y = 0 <=> [x,y] = [x, \inf)
   double left_bound;
   double right_bound;
-} monitor_classification_t;
+} classification_t;
 
 enum counter_type_t{
   COUNTER_MD_GET,
@@ -76,7 +76,7 @@ typedef struct {
   char * in_password;
   char * in_tags;
   int interval;
-  monitor_classification_t *classifications;
+  classification_t **classifications;
 } monitor_options_t;
 
 struct monitor_counter_t{

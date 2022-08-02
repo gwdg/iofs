@@ -198,6 +198,7 @@ static void format_influx(char *linep, int lastCounter) {
   char m_size[] = "iofs_size";
   char m_lat[] = "iofs_lat";
   char m_counts[] = "iofs_counts";
+  char m_classifications[] = "iofs_classifications";
 
   time_t seconds;
   seconds = time(NULL);
@@ -386,7 +387,7 @@ static void inline update_hist(enum hist_type_t type, int ts, double t, uint64_t
   update_counter(& monitor.hist[ts][type].interval[i], t, size);
 }
 
-static double evaluate_classification(monitor_classification_t *c, uint64_t size) {
+static double evaluate_classification(classification_t *c, uint64_t size) {
   return c->slope * size + c->y_intercept;
 }
 
@@ -394,7 +395,7 @@ static void inline update_classifications(int is_read_op, int ts, double t, uint
   classification_type_t ct = CLASSIFICATION_UNCLASSIFIED;
   double lowest_upper_bound = DBL_MAX;
   for (int i=0; options.classifications[i]; ++i) {
-    monitor_classification_t *c = options.classifications[i];
+    classification_t *c = options.classifications[i];
     if (is_read_op != c->is_read_op)
       continue;
     // If not defined in this interval, it cant classify anything
