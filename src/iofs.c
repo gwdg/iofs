@@ -794,15 +794,6 @@ int str_to_classification_type(const char *s, classification_type_t *out) {
 #define MAX_CLASSIFICATIONS 64
 monitor_classification_t *classifications[MAX_CLASSIFICATIONS+1] = {NULL};
 
-static void init_default_classifications() {
-  // One should suffice to have some overhead
-  classifications[0] = malloc(sizeof(monitor_classification_t));
-  classifications[0]->slope = 0;
-  classifications[0]->y_intercept = 0;
-  classifications[0]->left_bound = 0;
-  classifications[0]->right_bound = 0;
-}
-
 int try_parse_classification(char *buf, monitor_classification_t *out) {
   char benchmark_type_str[128];
   int is_read_op;

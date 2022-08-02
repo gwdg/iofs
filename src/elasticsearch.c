@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <math.h>
+#include <float.h>
 #include <sys/ioctl.h>
 #include <curl/curl.h>
 
@@ -42,6 +43,11 @@ typedef struct{
   monitor_counter_internal_t interval[HIST_BUCKETS];
 } monitor_histogram_t;
 
+typedef struct monitor_classification_t {
+  // 0 == write, 1 == read
+  monitor_counter_internal_t classifications[2];
+} monitor_classification_t;
+
 typedef struct {
   int started;
   pthread_t reporting_thread;
@@ -53,6 +59,7 @@ typedef struct {
   int timestep;
   monitor_counter_internal_t  value[2][COUNTER_LAST]; // two timesteps
   monitor_histogram_t         hist[2][HIST_LAST];
+  monitor_classification_t    classifications[2][CLASSIFICATION_LAST];
 } monitor_internal_t;
 
 static monitor_options_t options;
@@ -132,6 +139,7 @@ static void es_send(char* data, int len){
 }
 
 static void submit_to_es(char * json, int json_len){
+
   if(! options.es_server ) return;
 
   if (monitor.es_fd == 0){
@@ -321,6 +329,9 @@ static void* reporting_thread(void * user){
         clean_value(& monitor.hist[monitor.timestep][i].interval[j]);
     for(int i=0; i < lastCounter; i++)
       clean_value(& monitor.value[monitor.timestep][i]);
+    for (int i=0; i < CLASSIFICATION_LAST; ++i)
+      for (int j=0; j < 2; ++j)
+        clean_value(& monitor.classifications[monitor.timestep][i].classifications[j]);
 
     if (monitor.outfile) {
       fprintf(monitor.outfile, "%s", linep);
@@ -375,6 +386,35 @@ static void inline update_hist(enum hist_type_t type, int ts, double t, uint64_t
   update_counter(& monitor.hist[ts][type].interval[i], t, size);
 }
 
+static double evaluate_classification(monitor_classification_t *c, uint64_t size) {
+  return c->slope * size + c->y_intercept;
+}
+
+static void inline update_classifications(int is_read_op, int ts, double t, uint64_t size) {
+  classification_type_t ct = CLASSIFICATION_UNCLASSIFIED;
+  double lowest_upper_bound = DBL_MAX;
+  for (int i=0; options.classifications[i]; ++i) {
+    monitor_classification_t *c = options.classifications[i];
+    if (is_read_op != c->is_read_op)
+      continue;
+    // If not defined in this interval, it cant classify anything
+    if (c->left_bound != 0 && ((uint64_t)(c->left_bound)) > size)
+      continue;
+    if (c->right_bound != 0 && ((uint64_t)(c->right_bound)) < size)
+      continue;
+    // Actually evaluate
+    double x = evaluate_classification(c, size);
+    // If it is an upper bound AND
+    // it is lower than the current upper bound
+    // then we found a more accurate classification
+    if (x > t && x < lowest_upper_bound) {
+      ct = c->benchmark_type;
+      lowest_upper_bound = x;
+    }
+  }
+  update_counter(& monitor.classifications[ts][ct].classifications[is_read_op], t, size);
+}
+
 void monitor_end_activity(monitor_activity_t* activity, monitor_counter_t * counter, uint64_t count){
   clock_t t_end;
   t_end = clock();
@@ -388,8 +428,10 @@ void monitor_end_activity(monitor_activity_t* activity, monitor_counter_t * coun
   }
   if(counter->type == COUNTER_READ || counter->parent_type == COUNTER_READ){
     update_hist(HIST_READ, ts, t, count);
+    update_classifications(1, ts, t, count);
   }else if (counter->type == COUNTER_WRITE || counter->parent_type == COUNTER_WRITE){
     update_hist(HIST_WRITE, ts, t, count);
+    update_classifications(0, ts, t, count);
   }
 }
 

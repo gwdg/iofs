@@ -4,8 +4,10 @@
 
 // TODO: MOVE ME
 typedef enum classification_type_t {
-  RANDOM_UNCACHED = 0,
-  SAME_OFFSET = 1,
+  CLASSIFICATION_RANDOM_UNCACHED,
+  CLASSIFICATION_SAME_OFFSET,
+  CLASSIFICATION_UNCLASSIFIED,
+  CLASSIFICATION_LAST
 } classification_type_t;
 /* All classifications are either constant or linear polynomials */
 typedef struct monitor_classification_t {
