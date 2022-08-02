@@ -774,26 +774,6 @@ static struct fuse_operations cache_oper = {
 };
 
 
-// TODO move me as well
-static struct {
-  classification_type_t key;
-  char *val
-} classification_lookup[] = {
-  {CLASSIFICATION_RANDOM_UNCACHED, "RandomUncached"},
-  {CLASSIFICATION_SAME_OFFSET, "SameOffset"}
-};
-
-int str_to_classification_type(const char *s, classification_type_t *out) {
-  for (int i=0; i < sizeof(classification_lookup) / sizeof(classification_lookup[0]); ++i) {
-    if (!strcmp(s, classification_lookup[i].val)) {
-      // Found it!
-      *out = classification_lookup[i].key;
-      return 1;
-    }
-  }
-  // unparsable...
-  return 0;
-}
 
 int try_parse_classification(char *buf, classification_t **out) {
   char benchmark_type_str[128];

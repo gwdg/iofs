@@ -1,3 +1,6 @@
+#ifndef IOFS_MONITOR_H
+#define IOFS_MONITOR_H
+
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
@@ -20,6 +23,37 @@ typedef struct classification_t {
   double left_bound;
   double right_bound;
 } classification_t;
+
+static struct {
+  classification_type_t key;
+  char *val
+} classification_lookup[] = {
+  {CLASSIFICATION_RANDOM_UNCACHED, "RandomUncached"},
+  {CLASSIFICATION_SAME_OFFSET, "SameOffset"}
+};
+
+static int str_to_classification_type(const char *s, classification_type_t *out) {
+  for (int i=0; i < sizeof(classification_lookup) / sizeof(classification_lookup[0]); ++i) {
+    if (!strcmp(s, classification_lookup[i].val)) {
+      // Found it!
+      *out = classification_lookup[i].key;
+      return 1;
+    }
+  }
+  // unparsable...
+  return 0;
+}
+static int classification_type_to_str(const classification_type_t c, char *out) {
+  for (int i=0; i < sizeof(classification_lookup) / sizeof(classification_lookup[0]); ++i) {
+    if (c == classification_lookup[i].key) {
+      // Found it!
+      out = classification_lookup[i].val;
+      return 1;
+    }
+  }
+  // unparsable...
+  return 0;
+}
 
 enum counter_type_t{
   COUNTER_MD_GET,
@@ -101,3 +135,4 @@ void monitor_finalize();
 
 void monitor_start_activity(monitor_activity_t* activity);
 void monitor_end_activity(monitor_activity_t* activity, monitor_counter_t * counter, uint64_t value);
+#endif
