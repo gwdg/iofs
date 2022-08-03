@@ -1,0 +1,11 @@
+digraph G {
+    // TODO: Use sth more beautiful like tikz
+    node [shape=ellipse];
+    sleep [label="sleep(time_delta)"];
+    format_influx [label="format_influx()"];
+    switch_buf [label="switch buffer for\nother thread"];
+    clean_old_buf [label="clean old buffer"];
+    curl_to_influx [label="curl_to_influx()"];
+
+    sleep -> format_influx -> switch_buf -> clean_old_buf -> curl_to_influx -> sleep;
+}

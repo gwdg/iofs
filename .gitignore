@@ -1,5 +1,7 @@
 # custom stuff
 build/
+src/notes.md
+.gdb_history
 
 # Prerequisites
 *.d

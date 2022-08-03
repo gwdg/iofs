@@ -1,0 +1,15 @@
+# Summary
+
+- [Introduction: What is IOFS?](./Introduction.md)
+- [Quickstart](./setup/README.md)
+  - [Installation](./setup/Installation.md)
+  - [How to Use](./setup/HowToUse.md)
+  - [Classify I/O with blackheap](./setup/BlackheapIntegration.md)
+  - [Local Grafana Setup with Docker](./setup/LocalGrafana.md)
+- [How does it work?](./internal/README.md)
+  - [Workflows](./internal/Workflows.md)
+  - [Classification](./internal/Classification.md)
+- [How to extend it](./extending/README.md)
+  - [Add new metric](./extending/Metric.md)
+  - [Add new streaming target](./extending/Target.md)
+- [More ressources](./Ressources.md)
