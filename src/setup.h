@@ -13,6 +13,8 @@
 #define IN_SERVER 0x103
 #define IN_DB 0x104
 #define CLASSIFICATION_FILE 0x105
+#define IN_USERNAME 0x106
+#define IN_PASSWORD 0x107
 
 #define BUF_LEN 256
 
@@ -67,6 +69,8 @@ static struct argp_option arg_options[] = {
   {"in-db", IN_DB, "moep", 0, "database name"},
   {"in-tags", 't', "cluster=hpc-1", 0, "Custom tags for InfluxDB"},
   {"classificationfile", CLASSIFICATION_FILE, "/path/to/model.csv", 0, "Expected performance model. See documentation for more."},
+  {"in-username", IN_USERNAME, "myuser", 0, "Username for the influxdb"},
+  {"in-password", IN_PASSWORD, "hunter2", 0, "Password for the influxdb"},
   {0}
 };
 
@@ -131,6 +135,18 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
       break;
     case CLASSIFICATION_FILE:
       if (snprintf(arguments->classificationfile, BUF_LEN, "%s", arg) > BUF_LEN) {
+        printf("Input argument %s bigger then %d. Aborting", key, BUF_LEN);
+        return 1;
+      }
+      break;
+    case IN_USERNAME:
+      if (snprintf(arguments->in_username, BUF_LEN, "%s", arg) > BUF_LEN) {
+        printf("Input argument %s bigger then %d. Aborting", key, BUF_LEN);
+        return 1;
+      }
+      break;
+    case IN_PASSWORD:
+      if (snprintf(arguments->in_password, BUF_LEN, "%s", arg) > BUF_LEN) {
         printf("Input argument %s bigger then %d. Aborting", key, BUF_LEN);
         return 1;
       }
