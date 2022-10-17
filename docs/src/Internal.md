@@ -36,7 +36,7 @@ We already gave a higher level overview in the [introduction](../Introduction.md
 
 At first, the user/caller calls any usual I/O function provided by the Linux kernel. This gets processed by the Linux VFS, which matches the proper kernel module for the file system. In our case, this is the FUSE kernel module.
 
-The Fuse kernel module then calls the approprivate function given by our [`fuse_operations` struct](https://libfuse.github.io/doxygen/structfuse__operations.html). All our functions have the `cache_` prefix, thus calling the `X` function would end in `cache_X()`. This is only our personal convention.
+The FUSE kernel module then calls the approprivate function given by our [`fuse_operations` struct](https://libfuse.github.io/doxygen/structfuse__operations.html). All our functions have the `cache_` prefix, thus calling the `X` function would end in `cache_X()`. This is only our personal convention.
 
 After `cache_X` is called, we get the fake path prefix, which we have to map to where the file actually exists.
 
