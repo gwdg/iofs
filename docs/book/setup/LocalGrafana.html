@@ -147,16 +147,18 @@
 <ul>
 <li>Fill out the <code>.env</code> file</li>
 <li>Start the <code>docker-compose</code></li>
-<li>Unfortunately, <code>influx:1.x</code> doesn't initialize a database by default, even though it is defined in via the <code>.env</code> file. Thus we have to define our own database. See below.</li>
+<li>(Optional): Add some dummy data to find out whether it actually works</li>
 <li>Next, we have to define <code>influxdb</code> as the data source in grafana. See below.</li>
 <li>If not done previously, we have to enable <code>user_allow_other</code> in the <code>/etc/fuse.conf</code></li>
-<li>Lastly, we have to compile <code>iofs</code> (see roots <code>README.md</code>) and run it via</li>
+<li>Lastly, we have to compile <code>iofs</code> (see roots <code>README.md</code>) and run it via
+TODO TODO TODO THIS IS STILL OUTDATED</li>
 </ul>
 <pre><code>./iofs &lt;PATH_TO_WHERE_YOU_WRITE&gt; &lt;PATH_ON_WHAT_YOU_MAP&gt; --in-server=http://localhost:8086 --in-db=mydb
 </code></pre>
 <p>If you changed <code>INFLUX_DB</code> in <code>.env</code>, change <code>--in-db</code> accordingly.</p>
 <p>Now you can create your first dashboard!</p>
-<h2 id="create-initial-database-manually"><a class="header" href="#create-initial-database-manually">Create initial database manually</a></h2>
+<h2 id="optional-add-some-dummy-data"><a class="header" href="#optional-add-some-dummy-data">(Optional): Add some dummy data</a></h2>
+<p>This is optional, but recommended for the following reason: If you have an empty InfluxDB, Grafana can't verify whether the connection actually works. If you configure the data source correct, you can see the 200 returned by InfluxDB in your docker logs. But since the returned JSON contains no data, Grafana interprets it as a failed fetch, thus showing a false error. So, even if optional, this will make your debugging a lot easier.</p>
 <ol>
 <li>Start the docker-container (check with <code>docker container ls</code> afterwards).</li>
 <li>Get a shell into the influxdb container. By default, the container is named <code>influxc</code>:</li>
@@ -169,12 +171,18 @@
 <pre><code>influx -username influx -password influxdblongpassword123 -precision rfc3339
 </code></pre>
 <p>The precision defines the date format and <code>rfc3339</code> is used everywhere in the documentation
-4. Once in the influxdb shell, create a database with</p>
-<pre><code>CREATE DATABASE mydb;
+4. Once in the influxdb shell, use the database specified in the <code>.env</code> file.</p>
+<pre><code>USE mydb;
 </code></pre>
-<p>The database name should match the name specified in the <code>.env</code>. Verify that it worked with</p>
+<p>The database name should match the name specified in the <code>.env</code>. For created all databases, see</p>
 <pre><code>SHOW DATABASES;
 </code></pre>
+<ol start="5">
+<li>Create some dummy data. <a href="https://docs.influxdata.com/influxdb/v1.6/tools/shell/#write-data-to-influxdb-with-insert">Here the related docs.</a></li>
+</ol>
+<pre><code>INSERT treasures,captain_id=pirate_king value=2
+</code></pre>
+<p>Note that the semicolon is missing ;)</p>
 <h2 id="add-the-already-initialized-influxdb-to-grafana"><a class="header" href="#add-the-already-initialized-influxdb-to-grafana">Add the (already initialized) influxdb to grafana</a></h2>
 <ol>
 <li>Start the docker-container (check with <code>docker container ls</code> afterwards).</li>
