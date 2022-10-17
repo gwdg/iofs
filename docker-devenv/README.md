@@ -1,3 +1,3 @@
 # Local Grafana+InfluxDB+iofs setup
 
-See the docs for more (TODO link once its hosted)
+# [Link to Documentation](https://gwdg.github.io/iofs/book/setup/LocalGrafana.html)
