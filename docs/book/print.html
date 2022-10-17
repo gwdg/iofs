@@ -239,7 +239,7 @@ make
 <pre><code>iofs /opt/iofs-data /data/my-data
 </code></pre>
 <h2 id="further-configuration"><a class="header" href="#further-configuration">Further Configuration</a></h2>
-<p>All possible configuration settings can be seen via <code>iofs --help</code> or in the <code>example.conf</code> contained in this repository.</p>
+<p>All possible configuration settings can be seen via <code>iofs --help</code> or in the <a href="setup/../assets/example.conf">example configuration</a>.</p>
 <p>Everything except the mount points can be both configured via CLI parameters or config file. Note that the CLI parameters have a higher precedence.</p>
 <p>There are 2 ways to use a configuration file:</p>
 <ol>
@@ -248,6 +248,7 @@ make
 </ol>
 <pre><code>IOFS_CONFIG_PATH=/home/user/example.conf iofs /opt/iofs-data /data/my-data
 </code></pre>
+<p>See <a href="setup/../assets/example.conf">here</a> for a documented example.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="classify-io-with-blackheap"><a class="header" href="#classify-io-with-blackheap">Classify I/O with blackheap</a></h1>
 <p><a href="https://github.com/lquenti/blackheap">blackheap</a> can be used together with iofs to automatically classify incoming I/O requests based on their predicted characteristics.</p>
 <h1 id="see-the-blackheap-documentation-for-more-information-on-how-to-use-it-with-iofs"><a class="header" href="#see-the-blackheap-documentation-for-more-information-on-how-to-use-it-with-iofs"><a href="https://lquenti.github.io/blackheap/book/StreamedClassifications.html">See the blackheap documentation for more information on how to use it with iofs.</a></a></h1>
