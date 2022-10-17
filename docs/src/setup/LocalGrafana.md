@@ -7,11 +7,10 @@
 - Next, we have to define `influxdb` as the data source in grafana. See below.
 - If not done previously, we have to enable `user_allow_other` in the `/etc/fuse.conf`
 - Lastly, we have to compile `iofs` (see roots `README.md`) and run it via
-TODO TODO TODO THIS IS STILL OUTDATED
 ```
-./iofs <PATH_TO_WHERE_YOU_WRITE> <PATH_ON_WHAT_YOU_MAP> --in-server=http://localhost:8086 --in-db=mydb
+./iofs <PATH_TO_WHERE_YOU_WRITE> <PATH_ON_WHAT_YOU_MAP> --in-server=http://localhost:8086 --in-db=mydb --in-username=influx --in-password=influxdblongpassword123
 ```
-If you changed `INFLUX_DB` in `.env`, change `--in-db` accordingly.
+If you changed the parameters in `.env`, change `--in-db` accordingly.
 
 Now you can create your first dashboard!
 
