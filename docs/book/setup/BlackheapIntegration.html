@@ -81,7 +81,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../Introduction.html"><strong aria-hidden="true">1.</strong> Introduction: What is IOFS?</a></li><li class="chapter-item expanded "><a href="../setup/index.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../setup/Installation.html"><strong aria-hidden="true">2.1.</strong> Installation</a></li><li class="chapter-item expanded "><a href="../setup/HowToUse.html"><strong aria-hidden="true">2.2.</strong> How to Use</a></li><li class="chapter-item expanded "><a href="../setup/BlackheapIntegration.html" class="active"><strong aria-hidden="true">2.3.</strong> Classify I/O with blackheap</a></li><li class="chapter-item expanded "><a href="../setup/LocalGrafana.html"><strong aria-hidden="true">2.4.</strong> Local Grafana Setup with Docker</a></li></ol></li><li class="chapter-item expanded "><a href="../internal/index.html"><strong aria-hidden="true">3.</strong> How does it work?</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../internal/Workflows.html"><strong aria-hidden="true">3.1.</strong> Workflows</a></li><li class="chapter-item expanded "><a href="../internal/Classification.html"><strong aria-hidden="true">3.2.</strong> Classification</a></li></ol></li><li class="chapter-item expanded "><a href="../extending/index.html"><strong aria-hidden="true">4.</strong> How to extend it</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../extending/Metric.html"><strong aria-hidden="true">4.1.</strong> Add new metric</a></li><li class="chapter-item expanded "><a href="../extending/Target.html"><strong aria-hidden="true">4.2.</strong> Add new streaming target</a></li></ol></li><li class="chapter-item expanded "><a href="../Ressources.html"><strong aria-hidden="true">5.</strong> More ressources</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../Introduction.html"><strong aria-hidden="true">1.</strong> Introduction: What is IOFS?</a></li><li class="chapter-item expanded "><a href="../setup/index.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../setup/Installation.html"><strong aria-hidden="true">2.1.</strong> Installation</a></li><li class="chapter-item expanded "><a href="../setup/HowToUse.html"><strong aria-hidden="true">2.2.</strong> How to Use</a></li><li class="chapter-item expanded "><a href="../setup/BlackheapIntegration.html" class="active"><strong aria-hidden="true">2.3.</strong> Classify I/O with blackheap</a></li><li class="chapter-item expanded "><a href="../setup/LocalGrafana.html"><strong aria-hidden="true">2.4.</strong> Local Grafana Setup with Docker</a></li></ol></li><li class="chapter-item expanded "><a href="../Internal.html"><strong aria-hidden="true">3.</strong> How does it work?</a></li><li class="chapter-item expanded "><a href="../extending/index.html"><strong aria-hidden="true">4.</strong> How to extend it</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../extending/Metric.html"><strong aria-hidden="true">4.1.</strong> Add new metric</a></li><li class="chapter-item expanded "><a href="../extending/Target.html"><strong aria-hidden="true">4.2.</strong> Add new streaming target</a></li></ol></li><li class="chapter-item expanded "><a href="../Ressources.html"><strong aria-hidden="true">5.</strong> More ressources</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -143,8 +143,8 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="classify-io-with-blackheap"><a class="header" href="#classify-io-with-blackheap">Classify I/O with blackheap</a></h1>
-<p>The I/O can further be classified statistically by using <a href="https://github.com/lquenti/blackheap">Blackheap</a>.</p>
-<p>See here (TODO) for how to set it up and here (TODO) for the underlying statistical model.</p>
+<p><a href="https://github.com/lquenti/blackheap">blackheap</a> can be used together with iofs to automatically classify incoming I/O requests based on their predicted characteristics.</p>
+<h1 id="see-the-blackheap-documentation-for-more-information-on-how-to-use-it-with-iofs"><a class="header" href="#see-the-blackheap-documentation-for-more-information-on-how-to-use-it-with-iofs"><a href="https://lquenti.github.io/blackheap/book/StreamedClassifications.html">See the blackheap documentation for more information on how to use it with iofs.</a></a></h1>
 
                     </main>
 
@@ -175,6 +175,22 @@
 
         </div>
 
+        <!-- Livereload script (if served using the cli tool) -->
+        <script type="text/javascript">
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
 
 
 

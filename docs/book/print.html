@@ -82,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="Introduction.html"><strong aria-hidden="true">1.</strong> Introduction: What is IOFS?</a></li><li class="chapter-item expanded "><a href="setup/index.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="setup/Installation.html"><strong aria-hidden="true">2.1.</strong> Installation</a></li><li class="chapter-item expanded "><a href="setup/HowToUse.html"><strong aria-hidden="true">2.2.</strong> How to Use</a></li><li class="chapter-item expanded "><a href="setup/BlackheapIntegration.html"><strong aria-hidden="true">2.3.</strong> Classify I/O with blackheap</a></li><li class="chapter-item expanded "><a href="setup/LocalGrafana.html"><strong aria-hidden="true">2.4.</strong> Local Grafana Setup with Docker</a></li></ol></li><li class="chapter-item expanded "><a href="internal/index.html"><strong aria-hidden="true">3.</strong> How does it work?</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="internal/Workflows.html"><strong aria-hidden="true">3.1.</strong> Workflows</a></li><li class="chapter-item expanded "><a href="internal/Classification.html"><strong aria-hidden="true">3.2.</strong> Classification</a></li></ol></li><li class="chapter-item expanded "><a href="extending/index.html"><strong aria-hidden="true">4.</strong> How to extend it</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="extending/Metric.html"><strong aria-hidden="true">4.1.</strong> Add new metric</a></li><li class="chapter-item expanded "><a href="extending/Target.html"><strong aria-hidden="true">4.2.</strong> Add new streaming target</a></li></ol></li><li class="chapter-item expanded "><a href="Ressources.html"><strong aria-hidden="true">5.</strong> More ressources</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="Introduction.html"><strong aria-hidden="true">1.</strong> Introduction: What is IOFS?</a></li><li class="chapter-item expanded "><a href="setup/index.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="setup/Installation.html"><strong aria-hidden="true">2.1.</strong> Installation</a></li><li class="chapter-item expanded "><a href="setup/HowToUse.html"><strong aria-hidden="true">2.2.</strong> How to Use</a></li><li class="chapter-item expanded "><a href="setup/BlackheapIntegration.html"><strong aria-hidden="true">2.3.</strong> Classify I/O with blackheap</a></li><li class="chapter-item expanded "><a href="setup/LocalGrafana.html"><strong aria-hidden="true">2.4.</strong> Local Grafana Setup with Docker</a></li></ol></li><li class="chapter-item expanded "><a href="Internal.html"><strong aria-hidden="true">3.</strong> How does it work?</a></li><li class="chapter-item expanded "><a href="extending/index.html"><strong aria-hidden="true">4.</strong> How to extend it</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="extending/Metric.html"><strong aria-hidden="true">4.1.</strong> Add new metric</a></li><li class="chapter-item expanded "><a href="extending/Target.html"><strong aria-hidden="true">4.2.</strong> Add new streaming target</a></li></ol></li><li class="chapter-item expanded "><a href="Ressources.html"><strong aria-hidden="true">5.</strong> More ressources</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -249,14 +249,14 @@ make
 <pre><code>IOFS_CONFIG_PATH=/home/user/example.conf iofs /opt/iofs-data /data/my-data
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="classify-io-with-blackheap"><a class="header" href="#classify-io-with-blackheap">Classify I/O with blackheap</a></h1>
-<p>The I/O can further be classified statistically by using <a href="https://github.com/lquenti/blackheap">Blackheap</a>.</p>
-<p>See here (TODO) for how to set it up and here (TODO) for the underlying statistical model.</p>
+<p><a href="https://github.com/lquenti/blackheap">blackheap</a> can be used together with iofs to automatically classify incoming I/O requests based on their predicted characteristics.</p>
+<h1 id="see-the-blackheap-documentation-for-more-information-on-how-to-use-it-with-iofs"><a class="header" href="#see-the-blackheap-documentation-for-more-information-on-how-to-use-it-with-iofs"><a href="https://lquenti.github.io/blackheap/book/StreamedClassifications.html">See the blackheap documentation for more information on how to use it with iofs.</a></a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="local-grafana-setup-with-docker"><a class="header" href="#local-grafana-setup-with-docker">Local Grafana Setup with Docker</a></h1>
 <h2 id="how-to-start"><a class="header" href="#how-to-start">How to start</a></h2>
 <ul>
 <li>Fill out the <code>.env</code> file</li>
 <li>Start the <code>docker-compose</code></li>
-<li>Sadly, <code>influx:1.x</code> doesn't initialize a database by default, even though it is defined in via the <code>.env</code> file. Thus we have to define our own database. See below.</li>
+<li>Unfortunately, <code>influx:1.x</code> doesn't initialize a database by default, even though it is defined in via the <code>.env</code> file. Thus we have to define our own database. See below.</li>
 <li>Next, we have to define <code>influxdb</code> as the data source in grafana. See below.</li>
 <li>If not done previously, we have to enable <code>user_allow_other</code> in the <code>/etc/fuse.conf</code></li>
 <li>Lastly, we have to compile <code>iofs</code> (see roots <code>README.md</code>) and run it via</li>
@@ -298,16 +298,13 @@ make
 <ol start="6">
 <li>Afterwards test the configuration via <code>Save &amp; test</code>. If everything was configured successfully, it should show an alert with <code>Data source is working</code>. If you have the <code>docker-compose</code> logs open, you should see a request with a <code>Grafana/x.x.x</code> user agent as well.</li>
 </ol>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="how-does-it-work"><a class="header" href="#how-does-it-work">How does it work?</a></h1>
-<p>This chapter describes how the underlying concepts work.</p>
-<p>A high level overview can be found in the <a href="internal/../Introduction.html">introduction</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="workflows"><a class="header" href="#workflows">Workflows</a></h1>
 <h2 id="workflow-overview"><a class="header" href="#workflow-overview">Workflow Overview</a></h2>
 <p>Here are some Graph representations of the workflows.</p>
 <p>Firstly, the overall overview:</p>
-<p><img src="internal/../assets/graphs/general_flow.png" alt="Overview on how the functions call each other" /></p>
+<p><img src="../assets/graphs/general_flow.png" alt="Overview on how the functions call each other" /></p>
 <p>Secondly, the reporting thread internals:</p>
-<p><img src="internal/../assets/graphs/reporthing_thread.png" alt="Overview on how the reporting thread works" /></p>
+<p><img src="../assets/graphs/reporthing_thread.png" alt="Overview on how the reporting thread works" /></p>
 <h2 id="more-in-depth-overview"><a class="header" href="#more-in-depth-overview">More In-Depth Overview</a></h2>
 <p>This section will be split into three parts:</p>
 <ol>
@@ -316,14 +313,14 @@ make
 <li>How is the data getting streamed into a TSDB?</li>
 </ol>
 <h3 id="how-does-the-program-get-initialized"><a class="header" href="#how-does-the-program-get-initialized">How does the program get initialized?</a></h3>
-<p>At first, the main parses all arguments <a href="internal/../setup/HowToUse.html">given</a> via cli arguments or configuration file, with the cli having higher precedence. Afterwards, it starts the <a href="https://libfuse.github.io/doxygen/fuse_8h.html"><code>fuse_main()</code></a>.</p>
+<p>At first, the main parses all arguments <a href="../setup/HowToUse.html">given</a> via cli arguments or configuration file, with the cli having higher precedence. Afterwards, it starts the <a href="https://libfuse.github.io/doxygen/fuse_8h.html"><code>fuse_main()</code></a>.</p>
 <p>The <code>fuse_main()</code> is configured by a so-called <a href="https://libfuse.github.io/doxygen/structfuse__operations.html"><code>fuse_operations</code></a> struct. This struct has a bunch of function pointers, which represent the functions required to be implemented by an FUSE filesystem (some are optional). It additionally defines some other functions, like a <code>init</code> and <code>destroy</code> function for starting and stopping the file system.</p>
 <p>So, in order to initialize the FUSE file system, the <code>fuse_main()</code> calls our <code>cache_init()</code>, which is just a wrapper around our real <code>monitor_init()</code>.</p>
 <p>The <code>monitor_init()</code> initializes all aggregation data structures as well as <a href="https://libfuse.github.io/doxygen/structfuse__operations.html">cURL</a> for the REST data transfer. After that, it starts the <code>reporting_thread()</code> as a seperate <code>pthread</code>, which runs until the filesystem destroys itself via <code>cache_destroy()</code>.</p>
 <h3 id="what-happens-if-someone-does-a-io-request-of-any-kind"><a class="header" href="#what-happens-if-someone-does-a-io-request-of-any-kind">What happens if someone does a I/O request of any kind?</a></h3>
-<p>We already gave a higher level overview in the <a href="internal/../Introduction.html">introduction</a>. But it works as follows:</p>
+<p>We already gave a higher level overview in the <a href="../Introduction.html">introduction</a>. But it works as follows:</p>
 <p>At first, the user/caller calls any usual I/O function provided by the Linux kernel. This gets processed by the Linux VFS, which matches the proper kernel module for the file system. In our case, this is the FUSE kernel module.</p>
-<p>The Fuse kernel module then calls the approprivate function given by our <a href="https://libfuse.github.io/doxygen/structfuse__operations.html"><code>fuse_operations</code> struct</a>. All our functions have the <code>cache_</code> prefix, thus calling the <code>X</code> function would end in <code>cache_X()</code>. This is only our personal convention.</p>
+<p>The FUSE kernel module then calls the approprivate function given by our <a href="https://libfuse.github.io/doxygen/structfuse__operations.html"><code>fuse_operations</code> struct</a>. All our functions have the <code>cache_</code> prefix, thus calling the <code>X</code> function would end in <code>cache_X()</code>. This is only our personal convention.</p>
 <p>After <code>cache_X</code> is called, we get the fake path prefix, which we have to map to where the file actually exists.</p>
 <p>For example: We mounted <code>/data/real-data</code> to <code>/opt/fuse-playground</code>. Thus we get an I/O request for <code>/opt/fuse-playground/some-path/data.dat</code>, which we internally have to map to <code>/data/real-data/some-path/data.dat</code>.</p>
 <p>After that is done, we can just call the same function <code>X</code> for our new path. This again gets passed through the VFS, but this time gets processed by the real file system kernel module.</p>
@@ -340,9 +337,6 @@ make
 <li>Process state 1, send it, wait until the interval is done</li>
 <li>Switch back to state 1 and process state 2</li>
 </ul>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="classification"><a class="header" href="#classification">Classification</a></h1>
-<p>See the Blackheap docmentation for more information TODO link</p>
-<p>Afterwards, explain here how the FUSE overhead is managed, which creates some sort of chicken or the egg problem.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="how-to-extend-it"><a class="header" href="#how-to-extend-it">How to extend it</a></h1>
 <p>Any contributions are welcome. In this chapter, we explore how to extend</p>
 <ul>
@@ -377,6 +371,22 @@ make
 
         </div>
 
+        <!-- Livereload script (if served using the cli tool) -->
+        <script type="text/javascript">
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
 
 
 

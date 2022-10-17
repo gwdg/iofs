@@ -81,7 +81,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../Introduction.html"><strong aria-hidden="true">1.</strong> Introduction: What is IOFS?</a></li><li class="chapter-item expanded "><a href="../setup/index.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../setup/Installation.html"><strong aria-hidden="true">2.1.</strong> Installation</a></li><li class="chapter-item expanded "><a href="../setup/HowToUse.html"><strong aria-hidden="true">2.2.</strong> How to Use</a></li><li class="chapter-item expanded "><a href="../setup/BlackheapIntegration.html"><strong aria-hidden="true">2.3.</strong> Classify I/O with blackheap</a></li><li class="chapter-item expanded "><a href="../setup/LocalGrafana.html" class="active"><strong aria-hidden="true">2.4.</strong> Local Grafana Setup with Docker</a></li></ol></li><li class="chapter-item expanded "><a href="../internal/index.html"><strong aria-hidden="true">3.</strong> How does it work?</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../internal/Workflows.html"><strong aria-hidden="true">3.1.</strong> Workflows</a></li><li class="chapter-item expanded "><a href="../internal/Classification.html"><strong aria-hidden="true">3.2.</strong> Classification</a></li></ol></li><li class="chapter-item expanded "><a href="../extending/index.html"><strong aria-hidden="true">4.</strong> How to extend it</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../extending/Metric.html"><strong aria-hidden="true">4.1.</strong> Add new metric</a></li><li class="chapter-item expanded "><a href="../extending/Target.html"><strong aria-hidden="true">4.2.</strong> Add new streaming target</a></li></ol></li><li class="chapter-item expanded "><a href="../Ressources.html"><strong aria-hidden="true">5.</strong> More ressources</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../Introduction.html"><strong aria-hidden="true">1.</strong> Introduction: What is IOFS?</a></li><li class="chapter-item expanded "><a href="../setup/index.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../setup/Installation.html"><strong aria-hidden="true">2.1.</strong> Installation</a></li><li class="chapter-item expanded "><a href="../setup/HowToUse.html"><strong aria-hidden="true">2.2.</strong> How to Use</a></li><li class="chapter-item expanded "><a href="../setup/BlackheapIntegration.html"><strong aria-hidden="true">2.3.</strong> Classify I/O with blackheap</a></li><li class="chapter-item expanded "><a href="../setup/LocalGrafana.html" class="active"><strong aria-hidden="true">2.4.</strong> Local Grafana Setup with Docker</a></li></ol></li><li class="chapter-item expanded "><a href="../Internal.html"><strong aria-hidden="true">3.</strong> How does it work?</a></li><li class="chapter-item expanded "><a href="../extending/index.html"><strong aria-hidden="true">4.</strong> How to extend it</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../extending/Metric.html"><strong aria-hidden="true">4.1.</strong> Add new metric</a></li><li class="chapter-item expanded "><a href="../extending/Target.html"><strong aria-hidden="true">4.2.</strong> Add new streaming target</a></li></ol></li><li class="chapter-item expanded "><a href="../Ressources.html"><strong aria-hidden="true">5.</strong> More ressources</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -147,7 +147,7 @@
 <ul>
 <li>Fill out the <code>.env</code> file</li>
 <li>Start the <code>docker-compose</code></li>
-<li>Sadly, <code>influx:1.x</code> doesn't initialize a database by default, even though it is defined in via the <code>.env</code> file. Thus we have to define our own database. See below.</li>
+<li>Unfortunately, <code>influx:1.x</code> doesn't initialize a database by default, even though it is defined in via the <code>.env</code> file. Thus we have to define our own database. See below.</li>
 <li>Next, we have to define <code>influxdb</code> as the data source in grafana. See below.</li>
 <li>If not done previously, we have to enable <code>user_allow_other</code> in the <code>/etc/fuse.conf</code></li>
 <li>Lastly, we have to compile <code>iofs</code> (see roots <code>README.md</code>) and run it via</li>
@@ -198,7 +198,7 @@
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next" href="../internal/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="../Internal.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -212,13 +212,29 @@
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next" href="../internal/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="../Internal.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
 
         </div>
 
+        <!-- Livereload script (if served using the cli tool) -->
+        <script type="text/javascript">
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
 
 
 
