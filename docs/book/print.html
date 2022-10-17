@@ -253,6 +253,7 @@ make
 <p><a href="https://github.com/lquenti/blackheap">blackheap</a> can be used together with iofs to automatically classify incoming I/O requests based on their predicted characteristics.</p>
 <h1 id="see-the-blackheap-documentation-for-more-information-on-how-to-use-it-with-iofs"><a class="header" href="#see-the-blackheap-documentation-for-more-information-on-how-to-use-it-with-iofs"><a href="https://lquenti.github.io/blackheap/book/StreamedClassifications.html">See the blackheap documentation for more information on how to use it with iofs.</a></a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="local-grafana-setup-with-docker"><a class="header" href="#local-grafana-setup-with-docker">Local Grafana Setup with Docker</a></h1>
+<h1 id="link-to-docker-files"><a class="header" href="#link-to-docker-files"><a href="https://github.com/gwdg/iofs/tree/master/docker-devenv">Link to Docker Files</a></a></h1>
 <h2 id="how-to-start"><a class="header" href="#how-to-start">How to start</a></h2>
 <ul>
 <li>Fill out the <code>.env</code> file</li>
@@ -260,12 +261,11 @@ make
 <li>(Optional): Add some dummy data to find out whether it actually works</li>
 <li>Next, we have to define <code>influxdb</code> as the data source in grafana. See below.</li>
 <li>If not done previously, we have to enable <code>user_allow_other</code> in the <code>/etc/fuse.conf</code></li>
-<li>Lastly, we have to compile <code>iofs</code> (see roots <code>README.md</code>) and run it via
-TODO TODO TODO THIS IS STILL OUTDATED</li>
+<li>Lastly, we have to compile <code>iofs</code> (see roots <code>README.md</code>) and run it via</li>
 </ul>
-<pre><code>./iofs &lt;PATH_TO_WHERE_YOU_WRITE&gt; &lt;PATH_ON_WHAT_YOU_MAP&gt; --in-server=http://localhost:8086 --in-db=mydb
+<pre><code>./iofs &lt;PATH_TO_WHERE_YOU_WRITE&gt; &lt;PATH_ON_WHAT_YOU_MAP&gt; --in-server=http://localhost:8086 --in-db=mydb --in-username=influx --in-password=influxdblongpassword123
 </code></pre>
-<p>If you changed <code>INFLUX_DB</code> in <code>.env</code>, change <code>--in-db</code> accordingly.</p>
+<p>If you changed the parameters in <code>.env</code>, change <code>--in-db</code> accordingly.</p>
 <p>Now you can create your first dashboard!</p>
 <h2 id="optional-add-some-dummy-data"><a class="header" href="#optional-add-some-dummy-data">(Optional): Add some dummy data</a></h2>
 <p>This is optional, but recommended for the following reason: If you have an empty InfluxDB, Grafana can't verify whether the connection actually works. If you configure the data source correct, you can see the 200 returned by InfluxDB in your docker logs. But since the returned JSON contains no data, Grafana interprets it as a failed fetch, thus showing a false error. So, even if optional, this will make your debugging a lot easier.</p>
