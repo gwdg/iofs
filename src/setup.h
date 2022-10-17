@@ -159,7 +159,6 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 
 
 // Parse the buffer for config info. Return an error code or 0 for no error.
-// TODO Check how resistent this is to whitespaces
 static int parse_config(char *buf, options_t *arguments) {
   char dummy[BUF_LEN];
 //  printf(buf);
@@ -181,7 +180,6 @@ static int parse_config(char *buf, options_t *arguments) {
   return 3; // syntax error
 }
 
-// TODO document what tags are (a influx concept)
 static int append_tags(options_t *arguments, char *tags) {
   if (snprintf(
         arguments->in_tags + strlen(arguments->in_tags),
