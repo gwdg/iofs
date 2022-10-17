@@ -82,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="Introduction.html"><strong aria-hidden="true">1.</strong> Introduction: What is IOFS?</a></li><li class="chapter-item expanded "><a href="setup/index.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="setup/Installation.html"><strong aria-hidden="true">2.1.</strong> Installation</a></li><li class="chapter-item expanded "><a href="setup/HowToUse.html"><strong aria-hidden="true">2.2.</strong> How to Use</a></li><li class="chapter-item expanded "><a href="setup/BlackheapIntegration.html"><strong aria-hidden="true">2.3.</strong> Classify I/O with blackheap</a></li><li class="chapter-item expanded "><a href="setup/LocalGrafana.html"><strong aria-hidden="true">2.4.</strong> Local Grafana Setup with Docker</a></li></ol></li><li class="chapter-item expanded "><a href="Internal.html"><strong aria-hidden="true">3.</strong> How does it work?</a></li><li class="chapter-item expanded "><a href="extending/index.html"><strong aria-hidden="true">4.</strong> How to extend it</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="extending/Metric.html"><strong aria-hidden="true">4.1.</strong> Add new metric</a></li><li class="chapter-item expanded "><a href="extending/Target.html"><strong aria-hidden="true">4.2.</strong> Add new streaming target</a></li></ol></li><li class="chapter-item expanded "><a href="Ressources.html"><strong aria-hidden="true">5.</strong> More ressources</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="Introduction.html"><strong aria-hidden="true">1.</strong> Introduction: What is IOFS?</a></li><li class="chapter-item expanded "><a href="setup/index.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="setup/Installation.html"><strong aria-hidden="true">2.1.</strong> Installation</a></li><li class="chapter-item expanded "><a href="setup/HowToUse.html"><strong aria-hidden="true">2.2.</strong> How to Use</a></li><li class="chapter-item expanded "><a href="setup/BlackheapIntegration.html"><strong aria-hidden="true">2.3.</strong> Classify I/O with blackheap</a></li><li class="chapter-item expanded "><a href="setup/LocalGrafana.html"><strong aria-hidden="true">2.4.</strong> Local Grafana Setup with Docker</a></li></ol></li><li class="chapter-item expanded "><a href="Internal.html"><strong aria-hidden="true">3.</strong> How does it work?</a></li><li class="chapter-item expanded "><a href="Ressources.html"><strong aria-hidden="true">4.</strong> More ressources</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -337,16 +337,6 @@ make
 <li>Process state 1, send it, wait until the interval is done</li>
 <li>Switch back to state 1 and process state 2</li>
 </ul>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="how-to-extend-it"><a class="header" href="#how-to-extend-it">How to extend it</a></h1>
-<p>Any contributions are welcome. In this chapter, we explore how to extend</p>
-<ul>
-<li>The recorded metrics for both <a href="extending/../setup/HowToUse.html">standalone use</a> and <a href="extending/../setup/LocalGrafana.html">streaming</a>.</li>
-<li>Add a new streaming target like a TSDB, relational database or other API.</li>
-</ul>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="add-a-new-metric"><a class="header" href="#add-a-new-metric">Add a new metric</a></h1>
-<p>TODO document after actually having it done yourself.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="add-new-streaming-target"><a class="header" href="#add-new-streaming-target">Add new streaming target</a></h1>
-<p>TODO document after adding the metrics yourself</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="more-ressources"><a class="header" href="#more-ressources">More ressources</a></h1>
 <p>We first published a talk about iofs at the <a href="https://hps.vi4io.org/events/2022/iodc">HPC-IODC</a> workshop at the <a href="https://www.isc-hpc.com/">ISC 2022</a>.</p>
 <p>Here are our slides:</p>
@@ -371,22 +361,6 @@ make
 
         </div>
 
-        <!-- Livereload script (if served using the cli tool) -->
-        <script type="text/javascript">
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
-            const socket = new WebSocket(wsAddress);
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
 
 
 
