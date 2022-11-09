@@ -32,6 +32,7 @@ typedef struct options_t
   char logfile[BUF_LEN];            /* Argument for -o */
   char es_server[BUF_LEN], es_server_port[6], es_uri[BUF_LEN];
   char in_server[BUF_LEN], in_db[BUF_LEN], in_username[BUF_LEN], in_password[BUF_LEN], in_tags[BUF_LEN];
+  int use_allow_other; /* actually a bool */
   int verbosity;
   int detailed_logging;
   int interval;
@@ -50,6 +51,7 @@ static options_t arguments = {
   .in_server = "",
   .in_username = "",
   .in_server = "",
+  .use_allow_other = 0,
   .classificationfile = ""
 };
 
@@ -71,6 +73,7 @@ static struct argp_option arg_options[] = {
   {"classificationfile", CLASSIFICATION_FILE, "/path/to/model.csv", 0, "Expected performance model. See documentation for more."},
   {"in-username", IN_USERNAME, "myuser", 0, "Username for the influxdb"},
   {"in-password", IN_PASSWORD, "hunter2", 0, "Password for the influxdb"},
+  {"allow-other", 'a', 0, 0, "Use allow_other, see man mount.fuse"},
   {0}
 };
 
@@ -91,6 +94,8 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
     case 'i':
       arguments->interval = atoi(arg);
       break;
+    case 'a':
+      arguments->use_allow_other = 1;
     case 'l':
       if (snprintf(arguments->logfile, BUF_LEN, "%s", arg) > BUF_LEN) {
         printf("Input argument %s bigger then %d. Aborting", key, BUF_LEN);

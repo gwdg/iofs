@@ -877,16 +877,17 @@ int main(int argc, char *argv[]) {
   prefix = arguments.args[1];
 
   printf("IOFS-trace version 0.8\nSource path: %s mounted at %s\n", arguments.args[0], prefix);
-
   umask(0);
+
+  printf("DEBUG: %d\n", arguments.use_allow_other);
 
   char * newargs[4];
   newargs[0] = argv[0];
   newargs[1] = arguments.args[0];
-  newargs[2] = "-o";
-  newargs[3] = "allow_other";
+  //newargs[2] = "-o";
+  //newargs[3] = "allow_other";
 
 
-  int ret = fuse_main(4, newargs, &cache_oper, NULL);
+  int ret = fuse_main(2, newargs, &cache_oper, NULL);
   return 0;
 }
