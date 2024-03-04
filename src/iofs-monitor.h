@@ -47,11 +47,11 @@ static int str_to_classification_type(const char *s, classification_type_t *out)
   // unparsable...
   return 0;
 }
-static int classification_type_to_str(const classification_type_t c, char *out) {
+static int classification_type_to_str(const classification_type_t c, char **out) {
   for (int i=0; i < sizeof(classification_lookup) / sizeof(classification_lookup[0]); ++i) {
     if (c == classification_lookup[i].key) {
       // Found it!
-      out = classification_lookup[i].val;
+      *out = classification_lookup[i].val;
       return 1;
     }
   }

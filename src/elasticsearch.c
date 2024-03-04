@@ -205,10 +205,9 @@ static void format_influx(char *linep, int lastCounter) {
 
   for (int a=0; a < CLASSIFICATION_LAST; ++a) {
     char *out;
-    if (!classification_type_to_str(a, out)) continue;
+    if (!classification_type_to_str(a, &out)) continue;
     ptr += sprintf(ptr, "%s,%s", m_classifications, options.in_tags);
-    // TODO FIX ME IMPORTANTLY AS SOON AS IT WORKS
-    ptr += sprintf(ptr, ",type=%d ", out);
+    ptr += sprintf(ptr, ",type=%s ", out);
     ptr += sprintf(ptr, "read=%d,write=%d",
         monitor.classifications[monitor.timestep][a].classifications[1].count,
         monitor.classifications[monitor.timestep][a].classifications[0].count
