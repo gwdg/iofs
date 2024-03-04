@@ -8,7 +8,9 @@
 // TODO: MOVE ME
 typedef enum classification_type_t {
   CLASSIFICATION_RANDOM_UNCACHED,
+  CLASSIFICATION_REVERSE,
   CLASSIFICATION_SAME_OFFSET,
+  CLASSIFICATION_SEQUENTIAL,
   CLASSIFICATION_UNCLASSIFIED,
   CLASSIFICATION_LAST
 } classification_type_t;
@@ -29,7 +31,9 @@ static struct {
   char *val
 } classification_lookup[] = {
   {CLASSIFICATION_RANDOM_UNCACHED, "RandomUncached"},
-  {CLASSIFICATION_SAME_OFFSET, "SameOffset"}
+  {CLASSIFICATION_REVERSE, "Reverse"},
+  {CLASSIFICATION_SAME_OFFSET, "SameOffset"},
+  {CLASSIFICATION_SEQUENTIAL, "Sequential"}
 };
 
 static int str_to_classification_type(const char *s, classification_type_t *out) {
