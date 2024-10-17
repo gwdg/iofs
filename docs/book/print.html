@@ -282,7 +282,35 @@ make
 <p>See <a href="setup/../assets/example.conf">here</a> for a documented example.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="classify-io-with-blackheap"><a class="header" href="#classify-io-with-blackheap">Classify I/O with blackheap</a></h1>
 <p><a href="https://github.com/lquenti/blackheap">blackheap</a> can be used together with iofs to automatically classify incoming I/O requests based on their predicted characteristics.</p>
-<h1 id="see-the-blackheap-documentation-for-more-information-on-how-to-use-it-with-iofs"><a class="header" href="#see-the-blackheap-documentation-for-more-information-on-how-to-use-it-with-iofs"><a href="https://lquenti.github.io/blackheap/book/StreamedClassifications.html">See the blackheap documentation for more information on how to use it with iofs.</a></a></h1>
+<p>This allows for aggregate remote I/O analysis of multiple nodes. It currently supports any monitoring system that is based on Influxdb. In our internal use case, it is used in combinaton with Grafana.</p>
+<p>Again, no changes to the recorded software binary is required, although some configuration may be needed in order to write to the correct mount point.</p>
+<h2 id="setup"><a class="header" href="#setup">Setup</a></h2>
+<p>Here we have a the chicken and the egg type of problem: On the one hand, we want to do access classification based on the expected values of the FUSE file system. On the other hand, we theoretically already need those classifications before starting iofs. <a href="https://github.com/gwdg/iofs/issues/6">The the accompanying (open) issue if interested.</a>.</p>
+<p>As mentioned in that issue, there are basically two solutions. For now, this documentation will rely on the first idea since it cannot be assumed that one has that much computing time to create two seperate classification models.</p>
+<h3 id="step-0-if-influx-is-run-locally-start-influx-beforehand"><a class="header" href="#step-0-if-influx-is-run-locally-start-influx-beforehand">Step 0: If Influx is run locally, start Influx beforehand</a></h3>
+<p>This is done in the beginning to have an approximately same constant background load in order to have a more realistic classification.</p>
+<p>We provide a full docker-compose setup for InfluxDB+Grafana <a href="https://gwdg.github.io/iofs/book/setup/LocalGrafana.html">in the iofs repository</a>.</p>
+<h3 id="step-1-build-iofs-mount-it-with-fake-classifications"><a class="header" href="#step-1-build-iofs-mount-it-with-fake-classifications">Step 1: Build iofs; mount it with fake classifications</a></h3>
+<p>Of course, iofs has to be built first. See <a href="https://gwdg.github.io/iofs/book/setup/Installation.html">the related iofs documentation</a> for more.</p>
+<p>After that, iofs should be mounted with a fake set of models in order to have the approximately correct overhead for I/O requests. Download them here related to their CLI parameter name:</p>
+<ul>
+<li>constant-linear (DEFAULT): <a href="setup/../assets/dummymodels/constant-linear.csv">here</a></li>
+<li>linear: <a href="setup/../assets/dummymodels/linear.csv">here</a></li>
+</ul>
+<p>After that, mount iofs via</p>
+<pre><code>./iofs /new/mountpoint /where/real/data/is --classificationfile=/path/to/dummy.csv
+</code></pre>
+<p>or, if InfluxDB should be used:</p>
+<pre><code>iofs /new/fuse/mountpoint /where/real/data/is --classificationfile=/path/to/dummy.csv --in-server="http://influx_server:8086" --in-db=mydb
+</code></pre>
+<h3 id="step-2-create-a-performance-model-using-the-fake-initial-classifications"><a class="header" href="#step-2-create-a-performance-model-using-the-fake-initial-classifications">Step 2: Create a performance model using the fake initial classifications</a></h3>
+<p>Note: This, of course, will stream wrong data to Influx. But that is okay. We just want to have the correct data produced by blackheap, which requires the same request time overhead.</p>
+<p>So, now the correct performance model can be created using blackheap. This requires that the benchmark is done on the iofs FUSE file system, which can be controlled via the <code>--file</code> parameter. Therefore, the minimal call would be</p>
+<pre><code>blackheap &lt;PATH_TO_MODEL&gt; --file /path/to/somewhere/within/the/mountpoint
+</code></pre>
+<p>and afterwards run <code>&lt;PATH_TO_MODEL&gt;/build_models.py</code> to create all models:</p>
+<h3 id="step-3-remount-iofs-with-the-real-classifications"><a class="header" href="#step-3-remount-iofs-with-the-real-classifications">Step 3: Remount iofs with the real classifications</a></h3>
+<p>Afterwards, it should record and classify the I/O requests according to the performance model created.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="local-grafana-setup-with-docker"><a class="header" href="#local-grafana-setup-with-docker">Local Grafana Setup with Docker</a></h1>
 <h1 id="link-to-docker-files"><a class="header" href="#link-to-docker-files"><a href="https://github.com/gwdg/iofs/tree/master/docker-devenv">Link to Docker Files</a></a></h1>
 <h2 id="how-to-start"><a class="header" href="#how-to-start">How to start</a></h2>
