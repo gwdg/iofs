@@ -90,7 +90,9 @@
             <div class="sidebar-scrollbox">
                 <ol class="chapter"><li class="chapter-item expanded "><a href="Introduction.html" class="active"><strong aria-hidden="true">1.</strong> Introduction: What is IOFS?</a></li><li class="chapter-item expanded "><a href="setup/index.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="setup/Installation.html"><strong aria-hidden="true">2.1.</strong> Installation</a></li><li class="chapter-item expanded "><a href="setup/HowToUse.html"><strong aria-hidden="true">2.2.</strong> How to Use</a></li><li class="chapter-item expanded "><a href="setup/BlackheapIntegration.html"><strong aria-hidden="true">2.3.</strong> Classify I/O with blackheap</a></li><li class="chapter-item expanded "><a href="setup/LocalGrafana.html"><strong aria-hidden="true">2.4.</strong> Local Grafana Setup with Docker</a></li></ol></li><li class="chapter-item expanded "><a href="Internal.html"><strong aria-hidden="true">3.</strong> How does it work?</a></li><li class="chapter-item expanded "><a href="Ressources.html"><strong aria-hidden="true">4.</strong> More ressources</a></li></ol>
             </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
         </nav>
 
         <!-- Track and set sidebar scroll position -->
@@ -211,7 +213,7 @@ I/O accesses. We try to solve this problem with a pure blackbox approach.</p>
 <p>We use the <a href="https://www.influxdata.com/">InfluxDB</a> TSDB (Time Series DataBase) as our data source for Grafana. <code>iofs</code> currently only supports the <a href="https://docs.influxdata.com/influxdb/v1.8/query_language/">InfluxQL</a> API, not the <a href="https://docs.influxdata.com/influxdb/v1.8/flux/">Flux</a> Syntax. Furthermore, <code>iofs</code> is only tested for InfluxDB 1.x.</p>
 <p>We also have some streaming logic to support <a href="https://www.elastic.co/de/elasticsearch/">Elasticsearch</a> as a TSDB, although this is not tested nor actively maintained.</p>
 <h3 id="how-it-works"><a class="header" href="#how-it-works">How it works</a></h3>
-<p>In order to track and monitor the I/O requests, the user is required to &quot;proxy&quot; all requests through our pseudo-filesystem. Once this is done, the high level workflow works as follows:</p>
+<p>In order to track and monitor the I/O requests, the user is required to "proxy" all requests through our pseudo-filesystem. Once this is done, the high level workflow works as follows:</p>
 <ul>
 <li>User does a request on our pseudo filesystem</li>
 <li>The request goes to the Linux VFS</li>
