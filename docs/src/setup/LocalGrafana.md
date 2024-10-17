@@ -4,7 +4,7 @@
 
 ## How to start
 - Fill out the `.env` file
-- Start the `docker-compose`
+- Start the `docker` with `docker compose up`
 - (Optional): Add some dummy data to find out whether it actually works
 - Next, we have to define `influxdb` as the data source in grafana. See below.
 - If not done previously, we have to enable `user_allow_other` in the `/etc/fuse.conf`
@@ -12,11 +12,13 @@
 ```
 ./iofs <PATH_TO_WHERE_YOU_WRITE> <PATH_ON_WHAT_YOU_MAP> --in-server=http://localhost:8086 --in-db=mydb --in-username=influx --in-password=influxdblongpassword123
 ```
-If you changed the parameters in `.env`, change `--in-db` accordingly.
+If you changed the parameters in `.env`, change then here accordingly.
 
 Now you can create your first dashboard!
 
 ## (Optional): Add some dummy data
+
+**Update:** This is also automated using the `fill_influx.py` script in the `docker-devenv` folder
 
 This is optional, but recommended for the following reason: If you have an empty InfluxDB, Grafana can't verify whether the connection actually works. If you configure the data source correct, you can see the 200 returned by InfluxDB in your docker logs. But since the returned JSON contains no data, Grafana interprets it as a failed fetch, thus showing a false error. So, even if optional, this will make your debugging a lot easier.
 
@@ -48,7 +50,7 @@ Note that the semicolon is missing ;)
 1. Start the docker-container (check with `docker container ls` afterwards).
 2. Connect to grafana via <http://localhost:3000/>
 3. Login with the credentials set in `.env` (`grafana`:`grafana` is default)
-4. Go to `Configuration->Data Sources->Add Data Source->InfluxDB`
+4. Go to `Connections->Data Sources->Add Data Source->InfluxDB`
 5. Add the following configuration:
 
 **Query Language**: Since we explicitly use `influxdb` version 1, we have to use InfluxQL.
