@@ -26,10 +26,12 @@ typedef struct classification_t {
   double right_bound;
 } classification_t;
 
-static struct {
+struct classification_lookup_struct {
   classification_type_t key;
-  char *val
-} classification_lookup[] = {
+  char *val;
+};
+
+static struct classification_lookup_struct classification_lookup[] = {
   {CLASSIFICATION_RANDOM_UNCACHED, "RandomUncached"},
   {CLASSIFICATION_REVERSE, "Reverse"},
   {CLASSIFICATION_SAME_OFFSET, "SameOffset"},
