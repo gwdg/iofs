@@ -5,62 +5,6 @@
 #include <string.h>
 #include <time.h>
 
-// TODO: MOVE ME
-typedef enum classification_type_t {
-  CLASSIFICATION_RANDOM_UNCACHED,
-  CLASSIFICATION_REVERSE,
-  CLASSIFICATION_SAME_OFFSET,
-  CLASSIFICATION_SEQUENTIAL,
-  CLASSIFICATION_UNCLASSIFIED,
-  CLASSIFICATION_LAST
-} classification_type_t;
-/* All classifications are either constant or linear polynomials */
-typedef struct classification_t {
-  classification_type_t benchmark_type;
-  int is_read_op;
-  double slope;
-  double y_intercept;
-  // NULL == 0 is never a valid bound, because we can't have negative access sizes.
-  // Thus y = 0 <=> [x,y] = [x, \inf)
-  double left_bound;
-  double right_bound;
-} classification_t;
-
-struct classification_lookup_struct {
-  classification_type_t key;
-  char *val;
-};
-
-static struct classification_lookup_struct classification_lookup[] = {
-  {CLASSIFICATION_RANDOM_UNCACHED, "RandomUncached"},
-  {CLASSIFICATION_REVERSE, "Reverse"},
-  {CLASSIFICATION_SAME_OFFSET, "SameOffset"},
-  {CLASSIFICATION_SEQUENTIAL, "Sequential"}
-};
-
-static int str_to_classification_type(const char *s, classification_type_t *out) {
-  for (int i=0; i < sizeof(classification_lookup) / sizeof(classification_lookup[0]); ++i) {
-    if (!strcmp(s, classification_lookup[i].val)) {
-      // Found it!
-      *out = classification_lookup[i].key;
-      return 1;
-    }
-  }
-  // unparsable...
-  return 0;
-}
-static int classification_type_to_str(const classification_type_t c, char **out) {
-  for (int i=0; i < sizeof(classification_lookup) / sizeof(classification_lookup[0]); ++i) {
-    if (c == classification_lookup[i].key) {
-      // Found it!
-      *out = classification_lookup[i].val;
-      return 1;
-    }
-  }
-  // unparsable...
-  return 0;
-}
-
 enum counter_type_t{
   COUNTER_MD_GET,
   COUNTER_MD_MOD,
@@ -116,7 +60,6 @@ typedef struct {
   char * in_password;
   char * in_tags;
   int interval;
-  classification_t **classifications;
 } monitor_options_t;
 
 struct monitor_counter_t{

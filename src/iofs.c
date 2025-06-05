@@ -670,10 +670,6 @@ static int cache_flock(const char *path, struct fuse_file_info *fi, int op)
   return 0;
 }
 
-// TODO Move
-#define MAX_CLASSIFICATIONS 64
-classification_t *classifications[MAX_CLASSIFICATIONS+1] = {NULL};
-
 static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
 
   // see documentation of options in fuse.h
@@ -714,7 +710,6 @@ static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
     .in_password = arguments.in_password,
     .in_tags = arguments.in_tags,
     .detailed_logging = 1,
-    .classifications = classifications
   };
 
   monitor_init(& options);
@@ -775,76 +770,6 @@ static struct fuse_operations cache_oper = {
 
 
 
-int try_parse_classification(char *buf, classification_t **out) {
-  char benchmark_type_str[128];
-  int is_read_op;
-  double slope, y_intercept, left_bound, right_bound;
-  int ret = sscanf(buf, "%[^,],%d,%lf,%lf,%lf,%lf",
-    benchmark_type_str,
-    &is_read_op,
-    &slope,
-    &y_intercept,
-    &left_bound,
-    &right_bound
-  );
-  if (ret != 6) {
-    // couldn't parse all elements
-    // TODO log
-    return 1;
-  }
-
-  classification_type_t benchmark_type;
-  if (!str_to_classification_type(benchmark_type_str, &benchmark_type)) {
-    // TODO log
-    printf("Couldn't parse \"%s\"\n", benchmark_type_str);
-    return 1;
-  }
-
-  *out = malloc(sizeof(classification_t));
-  (*out)->benchmark_type = benchmark_type;
-  (*out)->is_read_op = is_read_op;
-  (*out)->slope = slope;
-  (*out)->y_intercept = y_intercept;
-  (*out)->left_bound = left_bound;
-  (*out)->right_bound = right_bound;
-
-  return 0;
-}
-
-
-// TODO MOVE ME
-static void init_classifications(options_t *arguments) {
-  // File provided?
-  if (arguments->classificationfile[0] == '\0') {
-    return;
-  }
-
-  FILE *fp = fopen(arguments->classificationfile, "r");
-  if (!fp) {
-    // TODO better logging
-    fprintf(stderr, "WARN: COULD NOT OPEN \"%s\"\n", arguments->classificationfile);
-    return;
-  }
-
-  char buf[BUF_LEN];
-  int i=0;
-  // Assumption: First line is always the human readable column description
-  // SO WE SKIP IT
-  fgets(buf, sizeof(buf), fp);
-  while (fgets(buf, sizeof(buf), fp)) {
-    // 0 == success
-    if (!try_parse_classification(buf, &(classifications[i]))) {
-      i++;
-    }
-
-  }
-
-  printf("Valid classifications: %d\n", i);
-
-  fclose(fp);
-}
-
-
 int main(int argc, char *argv[]) {
 
   char config_path[BUF_LEN] = "/etc/iofs.conf";
@@ -867,11 +792,6 @@ int main(int argc, char *argv[]) {
   }
 
   argp_parse(&argp, argc, argv, 0, 0, &arguments);
-
-  // Load and parse classification if exists
-  // otherwise create default lookup structure to keep the overhead the same
-  // If the overhead is not the same, one can't create an initial model...
-  init_classifications(&arguments);
 
   //add hostname to tags
   prefix = arguments.args[1];
