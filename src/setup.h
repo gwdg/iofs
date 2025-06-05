@@ -12,7 +12,7 @@
 #define ES_URI 0x102
 #define IN_SERVER 0x103
 #define IN_DB 0x104
-#define CLASSIFICATION_FILE 0x105
+#define CSV_RW_PATH 0x105
 #define IN_USERNAME 0x106
 #define IN_PASSWORD 0x107
 
@@ -36,7 +36,7 @@ typedef struct options_t
   int verbosity;
   int detailed_logging;
   int interval;
-  char classificationfile[BUF_LEN];
+  char csv_rw_path[BUF_LEN];
 } options_t;
 
 static int append_tags(options_t *, char *);
@@ -52,7 +52,7 @@ static options_t arguments = {
   .in_username = "",
   .in_server = "",
   .use_allow_other = 0,
-  .classificationfile = ""
+  .csv_rw_path = "" // empty path means no sending out
 };
 
 /*
@@ -70,10 +70,10 @@ static struct argp_option arg_options[] = {
   {"in-server", IN_SERVER, "http://localhost:8086", 0, "Location of the influxdb server with port"},
   {"in-db", IN_DB, "moep", 0, "database name"},
   {"in-tags", 't', "cluster=hpc-1", 0, "Custom tags for InfluxDB"},
-  {"classificationfile", CLASSIFICATION_FILE, "/path/to/model.csv", 0, "Expected performance model. See documentation for more."},
   {"in-username", IN_USERNAME, "myuser", 0, "Username for the influxdb"},
   {"in-password", IN_PASSWORD, "hunter2", 0, "Password for the influxdb"},
   {"allow-other", 'a', 0, 0, "Use allow_other, see man mount.fuse"},
+  {"csv-rw-path", CSV_RW_PATH, "/tmp/iofs_all_rw.csv", 0, "Path to write out *all* unaggregated r/w I/O calls"},
   {0}
 };
 
@@ -138,12 +138,6 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
         return 1;
       }
       break;
-    case CLASSIFICATION_FILE:
-      if (snprintf(arguments->classificationfile, BUF_LEN, "%s", arg) > BUF_LEN) {
-        printf("Input argument %s bigger then %d. Aborting", key, BUF_LEN);
-        return 1;
-      }
-      break;
     case IN_USERNAME:
       if (snprintf(arguments->in_username, BUF_LEN, "%s", arg) > BUF_LEN) {
         printf("Input argument %s bigger then %d. Aborting", key, BUF_LEN);
@@ -152,6 +146,12 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
       break;
     case IN_PASSWORD:
       if (snprintf(arguments->in_password, BUF_LEN, "%s", arg) > BUF_LEN) {
+        printf("Input argument %s bigger then %d. Aborting", key, BUF_LEN);
+        return 1;
+      }
+      break;
+    case CSV_RW_PATH:
+      if (snprintf(arguments->csv_rw_path, BUF_LEN, "%s", arg) > BUF_LEN) {
         printf("Input argument %s bigger then %d. Aborting", key, BUF_LEN);
         return 1;
       }
@@ -197,7 +197,7 @@ static int parse_config(char *buf, options_t *arguments) {
   if (sscanf(buf, " outfile = %s", arguments->outfile) == 1) return 0;
   if (sscanf(buf, " interval = %lu", arguments->interval) == 1) return 0;
   if (sscanf(buf, " verbosity = %lu", arguments->verbosity) == 1) return 0;
-  if (sscanf(buf, " classificationfile = %s", arguments->classificationfile) == 1) return 0;
+  if (sscanf(buf, " csv-rw-path = %s", arguments->csv_rw_path) == 1) return 0;
   return 3; // syntax error
 }
 
