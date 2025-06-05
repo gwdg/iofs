@@ -434,9 +434,15 @@ static int cache_read(const char *path, char *buf, size_t size, off_t offset,
   START_TIMER();
   int res;
 
-  (void) path;
   res = pread(fi->fh, buf, size, offset);
   END_TIMER(READ, res);
+
+  if (res > 0) {
+    clock_t t_end_op = clock();
+    double operation_latency_seconds = ((double)(t_end_op - activity.t_start)) / CLOCKS_PER_SEC;
+    log_rw_to_csv(path, 'r', offset, res, operation_latency_seconds);
+  }
+
   if (res == -1)
     res = -errno;
 
@@ -464,6 +470,10 @@ static int cache_read_buf(const char *path, struct fuse_bufvec **bufp, size_t si
   *bufp = src;
   END_TIMER(READ_BUF, size);
 
+  clock_t t_end_op = clock();
+  double operation_latency_seconds = ((double)(t_end_op - activity.t_start)) / CLOCKS_PER_SEC;
+  log_rw_to_csv(path, 'r', offset, size, operation_latency_seconds);
+
   return 0;
 }
 
@@ -473,9 +483,15 @@ static int cache_write(const char *path, const char *buf, size_t size, off_t off
   START_TIMER();
   int res;
 
-  (void) path;
   res = pwrite(fi->fh, buf, size, offset);
   END_TIMER(WRITE, res);
+
+  if (res > 0) {
+    clock_t t_end_op = clock();
+    double operation_latency_seconds = ((double)(t_end_op - activity.t_start)) / CLOCKS_PER_SEC;
+    log_rw_to_csv(path, 'w', offset, res, operation_latency_seconds);
+  }
+
   if (res == -1)
     res = -errno;
 
@@ -497,6 +513,11 @@ static int cache_write_buf(const char *path, struct fuse_bufvec *buf, off_t offs
 
   int ret = fuse_buf_copy(&dst, buf, FUSE_BUF_SPLICE_NONBLOCK);
   END_TIMER(WRITE_BUF, size);
+
+  clock_t t_end_op = clock();
+  double operation_latency_seconds = ((double)(t_end_op - activity.t_start)) / CLOCKS_PER_SEC;
+  log_rw_to_csv(path, 'w', offset, size, operation_latency_seconds);
+
   return ret;
 }
 
@@ -710,6 +731,7 @@ static void *cache_init (struct fuse_conn_info *conn, struct fuse_config *cfg){
     .in_password = arguments.in_password,
     .in_tags = arguments.in_tags,
     .detailed_logging = 1,
+    .csv_rw_path = arguments.csv_rw_path
   };
 
   monitor_init(& options);

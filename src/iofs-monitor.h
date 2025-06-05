@@ -60,6 +60,7 @@ typedef struct {
   char * in_password;
   char * in_tags;
   int interval;
+  char * csv_rw_path;
 } monitor_options_t;
 
 struct monitor_counter_t{
@@ -84,4 +85,7 @@ void monitor_finalize();
 
 void monitor_start_activity(monitor_activity_t* activity);
 void monitor_end_activity(monitor_activity_t* activity, monitor_counter_t * counter, uint64_t value);
+
+void log_rw_to_csv(const char *op_path, const char op_type, size_t offset, size_t bytes, double latency);
+
 #endif
