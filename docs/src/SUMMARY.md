@@ -4,7 +4,6 @@
 - [Quickstart](./setup/README.md)
   - [Installation](./setup/Installation.md)
   - [How to Use](./setup/HowToUse.md)
-  - [Classify I/O with blackheap](./setup/BlackheapIntegration.md)
   - [Local Grafana Setup with Docker](./setup/LocalGrafana.md)
 - [How does it work?](./Internal.md)
 - [More ressources](./Ressources.md)
