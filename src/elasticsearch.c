@@ -101,12 +101,12 @@ monitor_counter_t counter[COUNTER_LAST] = {
   };
 
 
-void log_rw_to_csv(const char *op_path, const char op_type, size_t offset, size_t bytes, double latency) {
+void log_rw_to_csv(const char *op_path, const char *op_type, size_t offset, size_t bytes, double latency) {
   if (!monitor.csv_rw_file) {
     return;
   }
   time_t current_time_unix = time(NULL);
-  fprintf(monitor.csv_rw_file, "%ld,%c,%s,%zu,%zu,%.6f\n",
+  fprintf(monitor.csv_rw_file, "%ld,%s,%s,%zu,%zu,%.6f\n",
       current_time_unix, op_type, op_path, offset, bytes, latency);
   fflush(monitor.csv_rw_file);
 }

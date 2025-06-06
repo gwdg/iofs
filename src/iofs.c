@@ -440,7 +440,7 @@ static int cache_read(const char *path, char *buf, size_t size, off_t offset,
   if (res > 0) {
     clock_t t_end_op = clock();
     double operation_latency_seconds = ((double)(t_end_op - activity.t_start)) / CLOCKS_PER_SEC;
-    log_rw_to_csv(path, 'r', offset, res, operation_latency_seconds);
+    log_rw_to_csv(path, "read", offset, res, operation_latency_seconds);
   }
 
   if (res == -1)
@@ -472,7 +472,7 @@ static int cache_read_buf(const char *path, struct fuse_bufvec **bufp, size_t si
 
   clock_t t_end_op = clock();
   double operation_latency_seconds = ((double)(t_end_op - activity.t_start)) / CLOCKS_PER_SEC;
-  log_rw_to_csv(path, 'r', offset, size, operation_latency_seconds);
+  log_rw_to_csv(path, "read", offset, size, operation_latency_seconds);
 
   return 0;
 }
@@ -489,7 +489,7 @@ static int cache_write(const char *path, const char *buf, size_t size, off_t off
   if (res > 0) {
     clock_t t_end_op = clock();
     double operation_latency_seconds = ((double)(t_end_op - activity.t_start)) / CLOCKS_PER_SEC;
-    log_rw_to_csv(path, 'w', offset, res, operation_latency_seconds);
+    log_rw_to_csv(path, "write", offset, res, operation_latency_seconds);
   }
 
   if (res == -1)
@@ -516,7 +516,7 @@ static int cache_write_buf(const char *path, struct fuse_bufvec *buf, off_t offs
 
   clock_t t_end_op = clock();
   double operation_latency_seconds = ((double)(t_end_op - activity.t_start)) / CLOCKS_PER_SEC;
-  log_rw_to_csv(path, 'w', offset, size, operation_latency_seconds);
+  log_rw_to_csv(path, "write", offset, size, operation_latency_seconds);
 
   return ret;
 }
