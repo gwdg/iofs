@@ -85,6 +85,9 @@ static int cache_getattr(const char *path, struct stat *stbuf, struct fuse_file_
   if (res == -1){
     return -errno;
   }
+  clock_t t_end_op = clock();
+  double operation_latency_seconds = ((double)(t_end_op - activity.t_start)) / CLOCKS_PER_SEC;
+  log_rw_to_csv(path, "getattr", 0, 1, operation_latency_seconds);
   return 0;
 }
 
@@ -422,6 +425,10 @@ static int cache_open(const char *path, struct fuse_file_info *fi)
   END_TIMER(OPEN, 1);
   if (fd == -1)
     return -errno;
+
+  clock_t t_end_op = clock();
+  double operation_latency_seconds = ((double)(t_end_op - activity.t_start)) / CLOCKS_PER_SEC;
+  log_rw_to_csv(path, "open", 0, 1, operation_latency_seconds);
 
   fi->fh = fd;
   return 0;
