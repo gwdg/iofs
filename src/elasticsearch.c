@@ -427,12 +427,12 @@ void monitor_init(monitor_options_t * o){
     monitor.csv_rw_file = fopen(o->csv_rw_path, "w+");
     if(! monitor.csv_rw_file) {
       fprintf(monitor.logfile, "Error: Could not open output file at %s\b", o->csv_rw_path);
+    } else {
+      // Write out header
+      fprintf(monitor.csv_rw_file,
+          "timestamp_unix,operation_type,path,offset,bytes_transferred,latency_seconds\n");
+      fflush(monitor.csv_rw_file);
     }
-
-    // Write out header
-    fprintf(monitor.csv_rw_file,
-        "timestamp_unix,operation_type,path,offset,bytes_transferred,latency_seconds\n");
-    fflush(monitor.csv_rw_file);
   }
 
   if (options.in_server) {
